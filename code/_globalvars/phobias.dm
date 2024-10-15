@@ -69,6 +69,7 @@ GLOBAL_LIST_INIT(phobia_mobs, list(
 	)),
 	"carps" = typecacheof(list(
 		/mob/living/basic/carp,
+		/mob/living/basic/space_dragon,
 	)),
 	"conspiracies" = typecacheof(list(
 		/mob/living/basic/drone,
@@ -245,8 +246,9 @@ GLOBAL_LIST_INIT(phobia_objs, list(
 		/obj/item/clothing/suit/hooded/carp_costume,
 		/obj/item/clothing/head/fedora/carpskin,
 		/obj/item/clothing/mask/gas/carp,
-		/obj/item/clothing/mask/cigarette/carp,
+		/obj/item/cigarette/carp,
 		/obj/item/clothing/under/suit/carpskin,
+		/obj/item/fish/baby_carp,
 		/obj/item/food/cubancarp,
 		/obj/item/food/fishmeat/carp,
 		/obj/item/grenade/clusterbuster/spawner_spesscarp,
@@ -492,7 +494,6 @@ GLOBAL_LIST_INIT(phobia_objs, list(
 		/obj/item/clothing/suit/wizrobe,
 		/obj/item/clothing/under/rank/civilian/chaplain,
 		/obj/item/codex_cicatrix,
-		/obj/item/cult_bastard,
 		/obj/item/gun/magic,
 		/obj/item/melee/cultblade,
 		/obj/item/melee/rune_carver,
@@ -578,7 +579,7 @@ GLOBAL_LIST_INIT(phobia_species, list(
 	var/words_match = ""
 	for(var/word in words)
 		words_match += "[REGEX_QUOTE(word)]|"
-	words_match = copytext(words_match, 1, -1)
-	return regex("(\\b|\\A)([words_match])('?s*)(\\b|\\|)", "ig")
+	words_match = copytext_char(words_match, 1, -1) // BANDASTATION EDIT
+	return regex("(\\b|\\A)([words_match])()", "igu") // BANDASTATION EDIT - Original: return regex("(\\b|\\A)([words_match])('?s*)(\\b|\\|)", "ig")
 
 #undef PHOBIA_FILE

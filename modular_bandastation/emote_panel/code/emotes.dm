@@ -49,11 +49,6 @@
 	name = "упасть"
 	message = "падает!"
 
-/datum/emote/living/cough
-	name = "покашлять"
-	message = "кашляет!"
-	message_mime = "изображает преувеличенный кашель!"
-
 /datum/emote/living/dance
 	name = "танцевать"
 	message = "радостно танцует."
@@ -98,7 +93,7 @@
 	message = "задыхается!"
 	message_mime = "бесшумно задыхается!"
 
-/datum/emote/living/gasp_shock
+/datum/emote/living/gasp/shock
 	name = "вздох (шок)"
 	message = "вздыхает в шоке!"
 	message_mime = "вздыхает в молчаливом шоке!"
@@ -127,6 +122,8 @@
 	message = "строит гримасу."
 
 /datum/emote/living/jump
+	key = "jump"
+	key_third_person = "jumps"
 	name = "прыгнуть"
 	message = "прыгает!"
 
@@ -201,10 +198,17 @@
 	name = "нюхать"
 	message = "нюхает."
 	message_mime = "бесшумно нюхает."
+	message_param = "нюхает %t."
+
+/datum/emote/living/sniff/get_sound(mob/living/user)
+	if(user.gender == FEMALE)
+		return 'modular_bandastation/emote_panel/audio/female/sniff_female.ogg'
+	else
+		return 'modular_bandastation/emote_panel/audio/male/sniff_male.ogg'
 
 /datum/emote/living/snore
 	name = "храпеть"
-	message = "храпеть."
+	message = "храпит."
 	message_mime = "бесшумно храпит."
 
 /datum/emote/living/stare
@@ -249,9 +253,9 @@
 	message = "машет рукой."
 
 /datum/emote/living/whimper
-	name = "скулить"
-	message = "скулит."
-	message_mime = "изображает скуление."
+	name = "хныкать"
+	message = "хнычет."
+	message_mime = "кажется, задет."
 
 /datum/emote/living/wsmile
 	name = "улыбнуться (слабо)"
@@ -267,7 +271,7 @@
 	message = "издает неприятное бульканье."
 	message_mime = "бесшумно и неприятно булькает."
 
-/datum/emote/living/beep
+/datum/emote/silicon/beep
 	name = "сигналить"
 	message = "издает сигнал."
 	message_param = "издает сигнал в сторону %t."
@@ -332,6 +336,11 @@
 /datum/emote/living/carbon/circle
 	name = "рука (кольцо)"
 
+/datum/emote/living/cough
+	name = "покашлять"
+	message = "кашляет!"
+	message_mime = "изображает преувеличенный кашель!"
+
 /datum/emote/living/carbon/moan
 	name = "стонать"
 	message = "стонет!"
@@ -346,7 +355,8 @@
 
 /datum/emote/living/carbon/scratch
 	name = "чесаться"
-	message = "чешится."
+	message = "чешется."
+	mob_type_allowed_typecache = list(/mob/living/carbon)
 
 /datum/emote/living/carbon/sign
 	name = "показать число"
@@ -396,7 +406,7 @@
 
 // Emote Human
 
-/datum/emote/living/carbon/human/cry
+/datum/emote/living/carbon/cry
 	name = "плакать"
 	message = "плачет."
 	message_mime = "бесшумно плачет."
@@ -406,9 +416,15 @@
 	message = "sadly can't find anybody to give daps to, and daps themself. Shameful."
 	message_param = "give daps to %t."
 
+/datum/emote/living/carbon/human/snuffle
+	key = "snuffle"
+	key_third_person = "snuffles"
+	name = "нюхать"
+	message = "нюхает."
+
 /datum/emote/living/carbon/human/eyebrow
 	name = "приподнять бровь"
-	message = "приподнимает брови."
+	message = "приподнимает бровь."
 
 /datum/emote/living/carbon/human/grumble
 	name = "ворчать"
@@ -434,6 +450,7 @@
 	name = "кричать"
 	message = "кричит!"
 	message_mime = "изображает крик!"
+	only_forced_audio = FALSE
 
 /datum/emote/living/carbon/human/scream/screech
 	name = "визжать"
@@ -630,3 +647,66 @@
 	name = "ooga"
 	message = "oogas."
 	message_param = "oogas at %t."
+
+// Vulpkanin
+
+/datum/emote/living/carbon/human/vulpkanin/can_run_emote(mob/user, status_check = TRUE, intentional = FALSE)
+	var/organ = user.get_organ_slot(ORGAN_SLOT_TONGUE)
+	if(istype(organ, /obj/item/organ/internal/tongue/vulpkanin))
+		return TRUE && ..()
+
+/datum/emote/living/carbon/human/vulpkanin/howl
+	key = "howl"
+	key_third_person = "howls"
+	message = "воет."
+	message_mime = "делает вид, что воет."
+	message_param = "воет на %t."
+	emote_type = EMOTE_AUDIBLE | EMOTE_VISIBLE
+	cooldown = 6 SECONDS
+	sound = 'modular_bandastation/emote_panel/audio/howl.ogg'
+
+/datum/emote/living/carbon/human/vulpkanin/growl
+	key = "growl"
+	key_third_person = "growls"
+	message = "рычит."
+	message_mime = "бусшумно рычит."
+	message_param = "рычит на %t."
+	cooldown = 2 SECONDS
+	emote_type = EMOTE_AUDIBLE | EMOTE_VISIBLE
+
+/datum/emote/living/carbon/human/vulpkanin/growl/get_sound(mob/living/user)
+	return pick(
+		'modular_bandastation/emote_panel/audio/growl1.ogg',
+		'modular_bandastation/emote_panel/audio/growl2.ogg',
+		'modular_bandastation/emote_panel/audio/growl3.ogg',
+	)
+
+/datum/emote/living/carbon/human/vulpkanin/purr
+	key = "purr"
+	key_third_person = "purrs"
+	message = "урчит."
+	message_param = "урчит на %t."
+	emote_type = EMOTE_AUDIBLE
+	vary = TRUE
+	cooldown = 2 SECONDS
+	sound = 'modular_bandastation/emote_panel/audio/purr.ogg'
+
+/datum/emote/living/carbon/human/vulpkanin/bark
+	key = "bark"
+	key_third_person = "bark"
+	message = "гавкает."
+	message_param = "гавкает на %t."
+	emote_type = EMOTE_AUDIBLE | EMOTE_VISIBLE
+	vary = TRUE
+	cooldown = 2 SECONDS
+	sound = 'modular_bandastation/emote_panel/audio/bark.ogg'
+
+/datum/emote/living/carbon/human/vulpkanin/wbark
+	key = "wbark"
+	key_third_person = "wbark"
+	message = "дважды гавкает."
+	message_param = "дважды гавкает на %t."
+	emote_type = EMOTE_AUDIBLE | EMOTE_VISIBLE
+	vary = TRUE
+	cooldown = 2 SECONDS
+	sound = 'modular_bandastation/emote_panel/audio/wbark.ogg'

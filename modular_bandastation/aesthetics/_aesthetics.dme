@@ -17,6 +17,9 @@
 // Camera
 #include "cameras/code/cameras.dm"
 
+// Decals
+#include "decals/code/floor_decals.dm"
+
 // Disposal
 #include "disposal/code/disposal.dm"
 
@@ -40,6 +43,9 @@
 
 // Radio
 #include "radio/code/radio.dm"
+
+// Supply Pods
+#include "supply_pods/code/supply_pods.dm"
 
 // Walls
 #include "walls/code/walls.dm"

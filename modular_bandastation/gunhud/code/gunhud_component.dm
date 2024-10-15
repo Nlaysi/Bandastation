@@ -28,6 +28,10 @@
 
 	RegisterSignals(parent, list(COMSIG_PREQDELETED, COMSIG_ITEM_DROPPED), PROC_REF(turn_off))
 	RegisterSignals(parent, list(COMSIG_UPDATE_GUNHUD, COMSIG_GUN_CHAMBER_PROCESSED), PROC_REF(update_hud))
+	if(istype(parent, /obj/item/gun/energy))
+		var/obj/item/gun/energy/energy_gun = parent
+		if(energy_gun.cell)
+			RegisterSignal(energy_gun.cell, COMSIG_POWER_STORE_GIVE, PROC_REF(update_hud))
 
 	hud.turn_on()
 	update_hud()
@@ -36,6 +40,10 @@
 	SIGNAL_HANDLER
 
 	UnregisterSignal(parent, list(COMSIG_PREQDELETED, COMSIG_ITEM_DROPPED, COMSIG_UPDATE_GUNHUD, COMSIG_GUN_CHAMBER_PROCESSED))
+	if(istype(parent, /obj/item/gun/energy))
+		var/obj/item/gun/energy/energy_gun = parent
+		if(energy_gun.cell)
+			UnregisterSignal(energy_gun.cell, COMSIG_POWER_STORE_GIVE)
 
 	if(hud)
 		hud.turn_off()
@@ -145,6 +153,18 @@
 	. = ..()
 	AddComponent(/datum/component/gunhud)
 
+/obj/item/gun/energy/recharge_newshot(no_cyborg_drain)
+	. = ..()
+	SEND_SIGNAL(src, COMSIG_UPDATE_GUNHUD)
+
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/gunhud)
+
+/obj/item/weldingtool/set_welding(new_value)
+	. = ..()
+	SEND_SIGNAL(src, COMSIG_UPDATE_GUNHUD)
+
+/obj/item/weldingtool/use(used)
+	. = ..()
+	SEND_SIGNAL(src, COMSIG_UPDATE_GUNHUD)

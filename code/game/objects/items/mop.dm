@@ -1,6 +1,7 @@
 /obj/item/mop
 	desc = "The world of janitalia wouldn't be complete without a mop."
 	name = "mop"
+	RU_NAMES_LIST_INIT("mop", "швабра", "швабры", "швабре", "швабру", "шваброй", "швабре")
 	icon = 'icons/obj/service/janitor.dmi'
 	icon_state = "mop"
 	inhand_icon_state = "mop"
@@ -46,11 +47,13 @@
 ///Checks whether or not we should clean.
 /obj/item/mop/proc/should_clean(datum/cleaning_source, atom/atom_to_clean, mob/living/cleaner)
 	if(clean_blacklist[atom_to_clean.type])
-		return DO_NOT_CLEAN
+		return CLEAN_BLOCKED|CLEAN_DONT_BLOCK_INTERACTION
 	if(reagents.total_volume < 0.1)
 		cleaner.balloon_alert(cleaner, "mop is dry!")
-		return DO_NOT_CLEAN
-	return reagents.has_reagent(amount = 1, chemical_flags = REAGENT_CLEANS)
+		return CLEAN_BLOCKED
+	if(reagents.has_reagent(amount = 1, chemical_flags = REAGENT_CLEANS))
+		return CLEAN_ALLOWED
+	return CLEAN_BLOCKED|CLEAN_NO_XP
 
 /**
  * Applies reagents to the cleaned floor and removes them from the mop.

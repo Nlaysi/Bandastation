@@ -9,7 +9,6 @@
 /datum/component/riding
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 
-	var/last_move_diagonal = FALSE
 	///tick delay between movements, lower = faster, higher = slower
 	var/vehicle_move_delay = 2
 
@@ -118,6 +117,7 @@
 		if (HAS_TRAIT(parent, trait))
 			ADD_TRAIT(rider, trait, REF(src))
 	rider.add_traits(rider_traits, REF(src))
+	post_vehicle_mob_buckle(movable_parent, rider)
 
 /// This proc is called when the rider attempts to grab the thing they're riding, preventing them from doing so.
 /datum/component/riding/proc/on_rider_try_pull(mob/living/rider_pulling, atom/movable/target, force)
@@ -126,6 +126,10 @@
 		var/mob/living/ridden = parent
 		ridden.balloon_alert(rider_pulling, "not while riding it!")
 		return COMSIG_LIVING_CANCEL_PULL
+
+///any behavior we want to happen after buckling the mob
+/datum/component/riding/proc/post_vehicle_mob_buckle(atom/movable/ridden, atom/movable/rider)
+	return TRUE
 
 /// Some ridable atoms may want to only show on top of the rider in certain directions, like wheelchairs
 /datum/component/riding/proc/handle_vehicle_layer(dir)
@@ -263,7 +267,7 @@
 /datum/component/riding/proc/driver_move(atom/movable/movable_parent, mob/living/user, direction)
 	SIGNAL_HANDLER
 	SHOULD_CALL_PARENT(TRUE)
-	movable_parent.set_glide_size(DELAY_TO_GLIDE_SIZE(vehicle_move_delay))
+	movable_parent.set_glide_size(DELAY_TO_GLIDE_SIZE(modified_move_delay(vehicle_move_delay))) // BANDASTATION EDIT - Vehicle speed
 
 /// So we can check all occupants when we bump a door to see if anyone has access
 /datum/component/riding/proc/vehicle_bump(atom/movable/movable_parent, obj/machinery/door/possible_bumped_door)

@@ -53,17 +53,15 @@
 		actions += new move_down_action(src)
 
 /obj/machinery/computer/camera_advanced/Destroy()
-	if(!QDELETED(current_user))
-		unset_machine(current_user)
-	if(eyeobj)
-		QDEL_NULL(eyeobj)
+	unset_machine()
+	QDEL_NULL(eyeobj)
 	QDEL_LIST(actions)
 	current_user = null
 	return ..()
 
 /obj/machinery/computer/camera_advanced/process()
-	if(!can_use(current_user) || (issilicon(current_user) && !current_user.has_unlimited_silicon_privilege))
-		unset_machine(current_user)
+	if(!can_use(current_user) || (issilicon(current_user) && !HAS_SILICON_ACCESS(current_user)))
+		unset_machine()
 		return PROCESS_KILL
 
 /obj/machinery/computer/camera_advanced/connect_to_shuttle(mapload, obj/docking_port/mobile/port, obj/docking_port/stationary/dock)
@@ -120,16 +118,16 @@
 	eyeobj.eye_user = null
 	user.remote_control = null
 	current_user = null
-	playsound(src, 'sound/machines/terminal_off.ogg', 25, FALSE)
+	playsound(src, 'sound/machines/terminal/terminal_off.ogg', 25, FALSE)
 
 /obj/machinery/computer/camera_advanced/on_set_is_operational(old_value)
 	if(!is_operational)
-		unset_machine(current_user)
+		unset_machine()
 
-/obj/machinery/computer/camera_advanced/proc/unset_machine(mob/M)
-	if(M == current_user)
-		remove_eye_control(M)
-		end_processing()
+/obj/machinery/computer/camera_advanced/proc/unset_machine()
+	if(!QDELETED(current_user))
+		remove_eye_control(current_user)
+	end_processing()
 
 /obj/machinery/computer/camera_advanced/proc/can_use(mob/living/user)
 	return can_interact(user)
@@ -147,7 +145,7 @@
 		return
 	if(isnull(user.client))
 		return
-	if(current_user)
+	if(!QDELETED(current_user))
 		to_chat(user, span_warning("The console is already in use!"))
 		return
 	var/mob/living/L = user
@@ -179,7 +177,7 @@
 			give_eye_control(L)
 			eyeobj.setLoc(camera_location)
 		else
-			unset_machine(user)
+			unset_machine()
 	else
 		give_eye_control(L)
 		eyeobj.setLoc(eyeobj.loc)
@@ -298,7 +296,7 @@
 				continue
 			T["[netcam.c_tag][netcam.can_use() ? null : " (Deactivated)"]"] = netcam
 
-	playsound(origin, 'sound/machines/terminal_prompt.ogg', 25, FALSE)
+	playsound(origin, 'sound/machines/terminal/terminal_prompt.ogg', 25, FALSE)
 	var/camera = tgui_input_list(usr, "Camera to view", "Cameras", T)
 	if(isnull(camera))
 		return
@@ -307,12 +305,12 @@
 	var/obj/machinery/camera/final = T[camera]
 	playsound(src, SFX_TERMINAL_TYPE, 25, FALSE)
 	if(final)
-		playsound(origin, 'sound/machines/terminal_prompt_confirm.ogg', 25, FALSE)
+		playsound(origin, 'sound/machines/terminal/terminal_prompt_confirm.ogg', 25, FALSE)
 		remote_eye.setLoc(get_turf(final))
 		owner.overlay_fullscreen("flash", /atom/movable/screen/fullscreen/flash/static)
 		owner.clear_fullscreen("flash", 3) //Shorter flash than normal since it's an ~~advanced~~ console!
 	else
-		playsound(origin, 'sound/machines/terminal_prompt_deny.ogg', 25, FALSE)
+		playsound(origin, 'sound/machines/terminal/terminal_prompt_deny.ogg', 25, FALSE)
 
 /datum/action/innate/camera_multiz_up
 	name = "Move up a floor"
@@ -341,3 +339,12 @@
 		to_chat(owner, span_notice("You move downwards."))
 	else
 		to_chat(owner, span_notice("You couldn't move downwards!"))
+
+/obj/machinery/computer/camera_advanced/human_ai/screwdriver_act(mob/living/user, obj/item/tool)
+	balloon_alert(user, "repackaging...")
+	if(!do_after(user, 5 SECONDS, src))
+		return ITEM_INTERACT_BLOCKING
+	tool.play_tool_sound(src, 40)
+	new /obj/item/secure_camera_console_pod(get_turf(src))
+	qdel(src)
+	return ITEM_INTERACT_SUCCESS

@@ -107,7 +107,7 @@
 	message.title = title
 	message.content = text
 
-	SScommunications.send_message(message)
+	GLOB.communications_controller.send_message(message)
 
 /**
  * Sends a minor annoucement to players.
@@ -142,7 +142,7 @@
 	else
 		finalized_announcement = CHAT_ALERT_DEFAULT_SPAN(jointext(minor_announcement_strings, ""))
 
-	var/custom_sound = sound_override || (alert ? 'sound/misc/notice1.ogg' : 'sound/misc/notice2.ogg')
+	var/custom_sound = sound_override || (alert ? 'sound/announcer/notice/notice1.ogg' : 'sound/announcer/notice/notice2.ogg')
 	dispatch_announcement_to_players(finalized_announcement, players, custom_sound, should_play_sound)
 
 /// Sends an announcement about the level changing to players. Uses the passed in datum and the subsystem's previous security level to generate the message.
@@ -186,7 +186,7 @@
 
 /// Proc that just dispatches the announcement to our applicable audience. Only the announcement is a mandatory arg.
 /proc/dispatch_announcement_to_players(announcement, list/players = GLOB.player_list, sound_override = null, should_play_sound = TRUE)
-	var/sound_to_play = !isnull(sound_override) ? sound_override : 'sound/misc/notice2.ogg'
+	var/sound_to_play = !isnull(sound_override) ? sound_override : 'sound/announcer/notice/notice2.ogg'
 
 	for(var/mob/target in players)
 		if(isnewplayer(target) || !target.can_hear())
@@ -201,7 +201,7 @@
 
 			/// SS220 TTS START
 			var/mob/living/silicon/ai/active_ai = DEFAULTPICK(active_ais(TRUE, null), null)
-			var/datum/tts_seed/announcement_tts_seed = active_ai ? active_ai.get_tts_seed() :  /datum/tts_seed/silero/glados
+			var/datum/tts_seed/announcement_tts_seed = active_ai ? active_ai.get_tts_seed() : /datum/tts_seed/silero/glados
 			INVOKE_ASYNC(
 				SStts220, \
 				TYPE_PROC_REF(/datum/controller/subsystem/tts220, get_tts), \
@@ -210,7 +210,6 @@
 				announcement, \
 				announcement_tts_seed, \
 				FALSE, \
-				/datum/singleton/sound_effect/radio_robot, \
 			)
 			/// SS220 TTS END
 

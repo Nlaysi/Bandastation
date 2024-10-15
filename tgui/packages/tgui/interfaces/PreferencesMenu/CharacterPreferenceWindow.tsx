@@ -7,6 +7,7 @@ import { Window } from '../../layouts';
 import { AntagsPage } from './AntagsPage';
 import { PreferencesMenuData } from './data';
 import { JobsPage } from './JobsPage';
+import { LoadoutPage } from './loadout/index';
 import { MainPage } from './MainPage';
 import { PageButton } from './PageButton';
 import { QuirksPage } from './QuirksPage';
@@ -19,6 +20,7 @@ enum Page {
   Jobs,
   Species,
   Quirks,
+  Loadout,
   // BANDASTATION EDIT ADD - TTS
   Voice,
 }
@@ -78,6 +80,9 @@ export const CharacterPreferenceWindow = (props) => {
     case Page.Quirks:
       pageContents = <QuirksPage />;
       break;
+    case Page.Loadout:
+      pageContents = <LoadoutPage />;
+      break;
     // BANDASTATION EDIT ADD - TTS
     case Page.Voice:
       pageContents = <VoicePage />;
@@ -101,15 +106,12 @@ export const CharacterPreferenceWindow = (props) => {
               profiles={data.character_profiles}
             />
           </Stack.Item>
-
           {!data.content_unlocked && (
             <Stack.Item align="center">
               Buy BYOND premium for more slots!
             </Stack.Item>
           )}
-
           <Stack.Divider />
-
           <Stack.Item>
             <Stack fill>
               <Stack.Item grow>
@@ -120,6 +122,16 @@ export const CharacterPreferenceWindow = (props) => {
                   otherActivePages={[Page.Species]}
                 >
                   Character
+                </PageButton>
+              </Stack.Item>
+
+              <Stack.Item grow>
+                <PageButton
+                  currentPage={currentPage}
+                  page={Page.Loadout}
+                  setPage={setCurrentPage}
+                >
+                  Loadout
                 </PageButton>
               </Stack.Item>
 
@@ -170,9 +182,7 @@ export const CharacterPreferenceWindow = (props) => {
               )}
             </Stack>
           </Stack.Item>
-
           <Stack.Divider />
-
           <Stack.Item grow>{pageContents}</Stack.Item>
         </Stack>
       </Window.Content>
