@@ -69,6 +69,7 @@
 #define EMOTE_HUMAN_SIGNAL 			"Показать пальцы"
 #define EMOTE_HUMAN_SHRUG 			"Пожать плечами"
 #define EMOTE_HUMAN_SNIFF 			"Шмыгать носом"
+#define EMOTE_HUMAN_SNIFFLE 		"Нюхать"
 #define EMOTE_HUMAN_JOHNNY 			"Курить стильно"
 #define EMOTE_HUMAN_SNEEZE 			"Чихнуть"
 #define EMOTE_HUMAN_SLAP 			"Дать пощёчину"
@@ -108,7 +109,7 @@
 #define EMOTE_HUMAN_HEM 			"Хмыкнуть"
 #define EMOTE_HUMAN_SCRATCH 		"Почесаться"
 #define EMOTE_HUMAN_WHISTLE 		"Свистеть"
-#define EMOTE_HUMAN_SNUFFLE 		"Нюхать"
+#define EMOTE_HUMAN_SNUFFLE 		"Шмыгать носом"
 #define EMOTE_HUMAN_ROAR 			"Рычать"
 #define EMOTE_HUMAN_RUMBLE 			"Урчать"
 #define EMOTE_HUMAN_THREAT 			"Угрожать"
@@ -118,6 +119,8 @@
 #define EMOTE_HUMAN_WIGGLES 		"Шевелить усиками"
 #define EMOTE_HUMAN_WHIPS 			"Хлестать хвостом"
 #define EMOTE_HUMAN_WHIP 			"Ударить хвостом"
+#define EMOTE_HUMAN_BARK			"Гавкнуть"
+#define EMOTE_HUMAN_WBARK			"Дважды гавкнуть"
 
 /// Carbon Emotes
 #define EMOTE_CARBON_BLINK 			"Моргать"

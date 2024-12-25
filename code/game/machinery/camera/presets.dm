@@ -84,6 +84,13 @@
 	autonames_in_areas[camera_area] = number
 	c_tag = "[format_text(camera_area.name)] #[number]"
 
+/obj/machinery/camera/autoname/motion
+	start_active = TRUE
+	name = "motion-sensitive security camera"
+
+/obj/machinery/camera/autoname/motion/Initialize(mapload)
+	. = ..()
+	upgradeMotion()
 
 /**
  * Bomb preset
@@ -192,6 +199,7 @@
 
 	if(name == initial(name))
 		name = "motion-sensitive security camera"
+		ru_names_rename(ru_names_toml(name))
 	if(!proximity_monitor)
 		proximity_monitor = new(src)
 	camera_upgrade_bitflags |= CAMERA_UPGRADE_MOTION
@@ -200,6 +208,7 @@
 /obj/machinery/camera/proc/removeMotion()
 	if(name == "motion-sensitive security camera")
 		name = "security camera"
+		ru_names_rename(ru_names_toml(name))
 	camera_upgrade_bitflags &= ~CAMERA_UPGRADE_MOTION
 	if(!area_motion)
 		QDEL_NULL(proximity_monitor)

@@ -1,6 +1,7 @@
 import { BooleanLike } from 'common/react';
 
 import { sendAct } from '../../backend';
+import { LoadoutCategory, LoadoutList } from './loadout/base';
 import { Gender } from './preferences/gender';
 
 export enum Food {
@@ -147,6 +148,8 @@ export type PreferencesMenuData = {
       gender: Gender;
       joblessrole: JoblessRole;
       species: string;
+      loadout_list: LoadoutList;
+      job_clothes: BooleanLike;
     };
 
     randomization: Record<string, RandomSetting>;
@@ -178,26 +181,35 @@ export type PreferencesMenuData = {
 
   window: Window;
 
-  // BANDASTATION EDIT START - TTS
-  tts_seed: string;
-  tts_enabled: BooleanLike;
-  providers: Array<{
-    name: string;
-    is_enabled: BooleanLike;
-  }>;
-  seeds: Array<{
-    name: string;
-    value: string;
-    category: string;
-    gender: string;
-    provider: string;
-    donator_level: number;
-  }>;
-  phrases: string[];
-  // BANDASTATION EDIT END
+  tts_seed: string; // BANDASTATION ADD
+  tts_enabled: BooleanLike; // BANDASTATION ADD
 };
 
+// BANDASTATION EDIT START
+export type Seed = {
+  name: string;
+  value: string;
+  category: string;
+  gender: string;
+  provider: string;
+  donator_level: number;
+};
+
+export type TtsProvider = {
+  name: string;
+  is_enabled: BooleanLike;
+};
+
+export type TtsData = {
+  providers: Array<TtsProvider>;
+  seeds: Array<Seed>;
+  phrases: string[];
+};
+
+// BANDASTATION EDIT END
+
 export type ServerData = {
+  text_to_speech: TtsData; // BANDASTATION ADD
   jobs: {
     departments: Record<string, Department>;
     jobs: Record<string, Job>;
@@ -208,6 +220,9 @@ export type ServerData = {
   quirks: QuirkInfo;
   random: {
     randomizable: string[];
+  };
+  loadout: {
+    loadout_tabs: LoadoutCategory[];
   };
   species: Record<string, Species>;
   [otheyKey: string]: unknown;

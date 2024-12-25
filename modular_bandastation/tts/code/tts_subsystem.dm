@@ -361,14 +361,11 @@ SUBSYSTEM_DEF(tts220)
 
 	var/sound/output = sound(filename2play)
 	output.status = SOUND_STREAM
+	output.volume = volume
 	if(!is_local || isnull(speaker))
 		output.wait = TRUE
-		output.volume = volume
 		output.environment = SOUND_ENVIRONMENT_NONE
 		output.channel = CHANNEL_TTS_RADIO
-
-		if(output.volume <= 0)
-			return
 
 		play_sfx_if_exists(listener, preSFX, output)
 		SEND_SOUND(listener, output)
@@ -384,10 +381,19 @@ SUBSYSTEM_DEF(tts220)
 		if(speaking_mob.client)
 			output.channel = get_local_channel_by_owner(speaker)
 			output.wait = TRUE
-	output = listener.playsound_local(turf_source, output, volume, wait = TRUE)
-
-	if(!output || output.volume <= 0)
-		return
+	listener.playsound_local(
+		turf_source,
+		vol = output.volume,
+		falloff_exponent = SOUND_FALLOFF_EXPONENT,
+		channel = output.channel,
+		pressure_affected = TRUE,
+		sound_to_use = output,
+		max_distance = SOUND_RANGE,
+		falloff_distance = SOUND_DEFAULT_FALLOFF_DISTANCE,
+		distance_multiplier = 1,
+		use_reverb = TRUE,
+		wait = output.wait
+	)
 
 	play_sfx_if_exists(listener, postSFX, output)
 
@@ -406,9 +412,15 @@ SUBSYSTEM_DEF(tts220)
 /datum/controller/subsystem/tts220/proc/get_local_channel_by_owner(owner)
 	var/channel = tts_local_channels_by_owner[owner]
 	if(isnull(channel))
-		channel = SSsounds.reserve_sound_channel()
+		channel = SSsounds.reserve_sound_channel(owner)
 		tts_local_channels_by_owner[owner] = channel
+		RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(clear_channel))
 	return channel
+
+/datum/controller/subsystem/tts220/proc/clear_channel(owner)
+	SIGNAL_HANDLER
+
+	tts_local_channels_by_owner -= owner
 
 /datum/controller/subsystem/tts220/proc/cleanup_tts_file(filename)
 	fdel(filename)
@@ -478,6 +490,7 @@ SUBSYSTEM_DEF(tts220)
 /datum/controller/subsystem/tts220/proc/pick_tts_seed_by_gender(gender)
 	var/tts_gender = SStts220.get_tts_gender(gender)
 	var/tts_by_gender = LAZYACCESS(SStts220.tts_seeds_by_gender, tts_gender)
+	tts_by_gender |= LAZYACCESS(SStts220.tts_seeds_by_gender, TTS_GENDER_ANY)
 	if(!length(tts_by_gender))
 		logger.Log(LOG_CATEGORY_DEBUG, "No tts for gender `[gender]`, tts_gender: `[tts_gender]`")
 		return null
