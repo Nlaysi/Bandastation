@@ -18,3 +18,6 @@ actions.dmi:
 
 Changes for BandaStation: extracted the listed states into separate DMI files.
 Pixels, directions and frame metadata are preserved; no art was redrawn.
+
+preview.png: enlarged overview of the same extracted sprites with text labels.
+Derived from borer.dmi and actions.dmi above; distributed under CC BY-SA 3.0.
