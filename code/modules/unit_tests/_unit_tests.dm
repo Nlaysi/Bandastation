@@ -379,6 +379,11 @@
 #include "weird_food.dm"
 #include "wizard_loadout.dm"
 // END_INCLUDE
+// BANDASTATION ADDITION START - Modular tests stay outside the sorted upstream include block
+// BANDASTATION ADDITION - Manual xenoarchaeology depth, lifecycle and mining regression tests
+#include "../../../modular_bandastation/xenoarchaeology/tests/xenoarchaeology.dm"
+#include "../../../modular_bandastation/xenoarchaeology/tests/extended.dm"
+// BANDASTATION ADDITION END
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
 #endif
