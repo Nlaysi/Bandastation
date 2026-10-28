@@ -9,6 +9,7 @@ import {
 
 import { useBackend } from '../backend';
 import { Window } from '../layouts';
+import { MarkdownRenderer } from './MarkdownViewer';
 
 type Data = {
   mode: 'analyzer' | 'spectrometer' | 'harvester' | 'draining';
@@ -87,7 +88,11 @@ export const XenoartifactLab = () => {
           </Section>
         ) : (
           <Section title="Отчёт">
-            {data.report || 'Результатов пока нет.'}
+            {data.report ? (
+              <MarkdownRenderer content={data.report} sanitize />
+            ) : (
+              'Результатов пока нет.'
+            )}
           </Section>
         )}
       </Window.Content>
