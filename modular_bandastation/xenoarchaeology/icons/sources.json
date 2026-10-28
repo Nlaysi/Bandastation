@@ -86,5 +86,29 @@
     "git_blob": "c3640cf66115807a550d9b1aa5730399d9042353",
     "sha256": "8e1b63a2784a3e7d27e1a1a4cc9e46c069eb774ae666f9b4b18a2d0ec9c4a80c",
     "bytes": 1656
+  },
+  {
+    "local": "modular_bandastation/xenoarchaeology/icons/plants/growing.dmi",
+    "source": "modular_nova/modules/xenoarch/icons/growing.dmi",
+    "revision": "3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9",
+    "git_blob": "4bab24c4fc374afb3073a7430c73b1e6f6cd51d7",
+    "sha256": "353ed58562ce899c1d655ce097baaa2707bb933719f52a91d4ca7a21b2a85326",
+    "bytes": 16266
+  },
+  {
+    "local": "modular_bandastation/xenoarchaeology/icons/plants/harvest.dmi",
+    "source": "modular_nova/modules/xenoarch/icons/harvest.dmi",
+    "revision": "3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9",
+    "git_blob": "1bdf1e3ea825bf25027116de0df8260a45e0f8da",
+    "sha256": "b90082c9487129da0c53ede00fb057f1689ea0955f9b37326d2520e8ca4ec8b7",
+    "bytes": 4749
+  },
+  {
+    "local": "modular_bandastation/xenoarchaeology/icons/plants/seeds.dmi",
+    "source": "modular_nova/modules/xenoarch/icons/seeds.dmi",
+    "revision": "3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9",
+    "git_blob": "e1aa7739f73608000d84915f420cd672af3356ae",
+    "sha256": "809b69e70e45f3fb32ca5c879c1b042a143422a19ffef44721d544bcd35ed76b",
+    "bytes": 2600
   }
 ]

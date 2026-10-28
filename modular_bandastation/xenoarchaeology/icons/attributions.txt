@@ -39,3 +39,12 @@ artifacts/tools.dmi:
   Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarchartifacts/icons/tools.dmi
 artifacts/worn.dmi:
   Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarchartifacts/icons/worn.dmi
+
+plants/growing.dmi:
+  Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarch/icons/growing.dmi
+
+plants/harvest.dmi:
+  Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarch/icons/harvest.dmi
+
+plants/seeds.dmi:
+  Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarch/icons/seeds.dmi
