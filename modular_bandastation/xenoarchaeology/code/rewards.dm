@@ -43,7 +43,20 @@
 	)
 
 /obj/effect/spawner/random/xenoarch/plant
-	loot = list(/obj/item/seeds/random = 1)
+	spawn_loot_count = 2
+	loot = list(
+		/obj/item/seeds/random = 2,
+		/obj/item/seeds/amauri = 1,
+		/obj/item/seeds/gelthi = 1,
+		/obj/item/seeds/jurlmah = 1,
+		/obj/item/seeds/nofruit = 1,
+		/obj/item/seeds/shand = 1,
+		/obj/item/seeds/surik = 1,
+		/obj/item/seeds/telriis = 1,
+		/obj/item/seeds/thaadra = 1,
+		/obj/item/seeds/vale = 1,
+		/obj/item/seeds/vaporsac = 1,
+	)
 
 /obj/effect/spawner/random/xenoarch/animal
 	loot = list(
