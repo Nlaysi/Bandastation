@@ -69,11 +69,11 @@
 	touch(user)
 
 /obj/machinery/xenoartifact/proc/analysis_description()
-	. = "Состав: неизвестный сплав."
+	. = "### Состав\nНеизвестный сплав."
 	if(first_effect)
-		. += " Первичное излучение: [first_effect.get_description()]"
+		. += "\n\n### Первичное излучение\n[first_effect.get_description()]"
 	if(secondary_effect)
-		. += " Вторичное излучение: [secondary_effect.get_description()]"
+		. += "\n\n### Вторичное излучение\n[secondary_effect.get_description()]"
 
 /obj/machinery/xenoartifact/proc/touch(mob/living/user)
 	if(!istype(user) || !COOLDOWN_FINISHED(src, touch_cooldown))

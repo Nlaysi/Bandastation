@@ -134,7 +134,7 @@
 			activation = "энергетическое воздействие"
 		else
 			activation = "условия окружающей атмосферы"
-	return "[category]; передача [method]. Условие активации: [activation]. Радиус: [range] м."
+	return "- Класс: [category]\n- Передача: [method]\n- Условие активации: [activation]\n- Радиус: [range] м."
 
 /// Биозащита, латексные перчатки и научные очки уменьшают влияние артефактов.
 /proc/get_xenoartifact_susceptibility(mob/living/carbon/human/human)
