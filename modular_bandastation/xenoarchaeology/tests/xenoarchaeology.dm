@@ -129,6 +129,10 @@
 	for(var/turf/closed/mineral/xenoarchaeology/rock_type as anything in typesof(/turf/closed/mineral/xenoarchaeology))
 		var/turf/closed/mineral/xenoarchaeology/rock = run_loc_floor_bottom_left.ChangeTurf(rock_type, rock_type::baseturfs)
 		TEST_ASSERT_NULL(rock.mineral_type, "Образец неправильно записан в поле рудного типа")
+		rock.change_ore(/obj/item/stack/ore/iron)
+		TEST_ASSERT_NULL(rock.mineral_type, "Рудная жила заменила археологическое включение")
+		TEST_ASSERT_EQUAL(rock.mineral_amt, 1, "Рудная жила изменила число образцов")
+		TEST_ASSERT_EQUAL(rock.scan_state, "rock_strange", "Рудная жила изменила результат сканирования")
 		var/expected_ground = rock.turf_type
 		rock.gets_drilled()
 		var/turf/excavated = locate(rock.x, rock.y, rock.z)

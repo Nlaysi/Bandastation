@@ -10,6 +10,10 @@
 	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	defer_change = TRUE
 
+/// Обычная жила не должна подменять включение и его метку сканера.
+/turf/closed/mineral/xenoarchaeology/change_ore(ore_type, random)
+	return
+
 /turf/closed/mineral/xenoarchaeology/gets_drilled(mob/user, exp_multiplier = 0)
 	if(mineral_amt > 0)
 		mineral_amt = 0

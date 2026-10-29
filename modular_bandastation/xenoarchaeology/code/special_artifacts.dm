@@ -17,11 +17,9 @@
 	update_proximity()
 
 /obj/machinery/xenoartifact/bluespace_crystal/HasProximity(atom/movable/nearby)
-	SIGNAL_HANDLER
 	addtimer(CALLBACK(src, PROC_REF(update_proximity)), 0, TIMER_UNIQUE)
 
 /obj/machinery/xenoartifact/bluespace_crystal/OnProximityExit(atom/movable/nearby)
-	SIGNAL_HANDLER
 	addtimer(CALLBACK(src, PROC_REF(update_proximity)), 0, TIMER_UNIQUE)
 
 /obj/machinery/xenoartifact/bluespace_crystal/proc/update_proximity()

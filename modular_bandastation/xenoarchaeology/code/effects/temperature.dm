@@ -65,7 +65,7 @@
 		return
 	var/datum/gas_mixture/env = .
 	if(env.temperature > target_temp)
-		env.temperature -= 50 * seconds_per_tick
+		env.temperature = max(TCMB, target_temp, env.temperature - 50 * seconds_per_tick)
 		holder.air_update_turf(FALSE, FALSE)
 
 /datum/xenoartifact_effect/temperature/cold/do_effect_destroy()
