@@ -43,6 +43,8 @@
 
 /// Поштучная проверка и перенос через API storage сохраняют сигналы и ограничения предметов.
 /obj/machinery/xenoarch/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(!istype(tool, /obj/item/storage/bag/xenoarch) && !accepts(tool))
+		return ..()
 	if(panel_open || !anchored || !is_operational)
 		return ITEM_INTERACT_BLOCKING
 	if(istype(tool, /obj/item/storage/bag/xenoarch))
@@ -191,14 +193,11 @@
 /obj/item/circuitboard/machine/xenoarch/scanner
 	name = "archaeological sample scanner"
 	build_path = /obj/machinery/xenoarch/scanner
-	icon_state = "scanner"
 
 /obj/item/circuitboard/machine/xenoarch/digger
 	name = "automatic archaeological excavator"
 	build_path = /obj/machinery/xenoarch/digger
-	icon_state = "digger"
 
 /obj/item/circuitboard/machine/xenoarch/researcher
 	name = "archaeological sample researcher"
 	build_path = /obj/machinery/xenoarch/researcher
-	icon_state = "researcher"

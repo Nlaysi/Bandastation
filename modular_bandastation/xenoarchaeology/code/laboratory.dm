@@ -129,6 +129,9 @@
 
 /obj/machinery/xenoarch_lab/Exited(atom/movable/gone, direction)
 	. = ..()
+	if(istype(gone, /obj/item/xenoarch/particle_battery))
+		var/obj/item/xenoarch/particle_battery/battery = gone
+		battery.battery_effect?.turn_effect_off()
 	if(istype(gone, /obj/item/xenoarch))
 		stop_work()
 
@@ -138,13 +141,17 @@
 		update_appearance()
 
 /obj/machinery/xenoarch_lab/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	var/loading_sample = mode == "spectrometer" && istype(tool, /obj/item/xenoarch/core_sampler)
+	var/loading_battery = mode == "harvester" && istype(tool, /obj/item/xenoarch/particle_battery)
+	if(!loading_sample && !loading_battery)
+		return ..()
 	if(active || !ready())
 		return ITEM_INTERACT_BLOCKING
-	if(mode == "spectrometer" && istype(tool, /obj/item/xenoarch/core_sampler) && !get_sample())
+	if(loading_sample && !get_sample())
 		var/obj/item/xenoarch/core_sampler/sample = tool
 		if(sample.sample_data && user.transferItemToLoc(tool, src))
 			return ITEM_INTERACT_SUCCESS
-	if(mode == "harvester" && istype(tool, /obj/item/xenoarch/particle_battery) && !get_battery() && user.transferItemToLoc(tool, src))
+	if(loading_battery && !get_battery() && user.transferItemToLoc(tool, src))
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 

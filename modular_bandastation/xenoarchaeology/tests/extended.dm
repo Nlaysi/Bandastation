@@ -279,3 +279,106 @@
 	harvester.stop_work()
 	battery.forceMove(run_loc_floor_bottom_left)
 	TEST_ASSERT_EQUAL(harvester.icon_state, "harvester", "Сборщик не вернулся к пустому состоянию")
+
+/// Разрушение выбрасывает батарею до Destroy(), когда get_battery() уже не может её найти.
+/datum/unit_test/xenoarchaeology_drain_destruction/Run()
+	for(var/release_method in list(XENO_EFFECT_AURA, XENO_EFFECT_PULSE))
+		var/obj/machinery/xenoarch_lab/harvester/harvester = allocate(__IMPLIED_TYPE__)
+		harvester.set_is_operational(TRUE)
+		var/obj/item/xenoarch/particle_battery/battery = allocate(__IMPLIED_TYPE__, harvester)
+		battery.battery_effect = new /datum/xenoartifact_effect/heal(battery)
+		battery.battery_effect.release_method = release_method
+		battery.set_charge(100)
+		harvester.mode = "draining"
+		harvester.active = TRUE
+		battery.battery_effect.ToggleActivate(FALSE)
+		TEST_ASSERT(battery.battery_effect.activated, "Не начался опасный разряд")
+		harvester.take_damage(harvester.max_integrity * 10, BRUTE, BULLET)
+		TEST_ASSERT(QDELETED(harvester), "Урон не разрушил сборщик")
+		TEST_ASSERT(!QDELETED(battery) && isturf(battery.loc), "Разрушение не сохранило выпавшую батарею")
+		TEST_ASSERT(!battery.battery_effect.activated, "Выпавшая батарея продолжает излучать")
+		TEST_ASSERT_EQUAL(battery.battery_effect.process(2), PROCESS_KILL, "Эффект выпавшей батареи продолжает обработку")
+		qdel(battery)
+
+/// Несколько тиков пересекают цель, а длинный тик не должен пересечь абсолютный минимум.
+/datum/unit_test/xenoarchaeology_cooling/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/temperature/cold/effect = new(holder)
+	holder.first_effect = effect
+	var/turf/open/ground = get_turf(holder)
+	TEST_ASSERT_NOTNULL(ground.air, "На тестовой клетке отсутствует атмосфера")
+	ground.air.temperature = 293
+	effect.target_temp = 50
+	effect.ToggleActivate(FALSE)
+	for(var/tick in 1 to 4)
+		effect.do_effect_aura(2)
+		TEST_ASSERT(ground.air.temperature >= effect.target_temp, "Охлаждение пересекло заданную температуру")
+	TEST_ASSERT_EQUAL(ground.air.temperature, 50, "Охлаждение не достигло цели")
+	ground.air.temperature = 293
+	effect.target_temp = TCMB
+	effect.do_effect_aura(60)
+	TEST_ASSERT_EQUAL(ground.air.temperature, TCMB, "Длинный тик пересёк нижний предел температуры")
+	TEST_ASSERT(ground.air.return_pressure() >= 0, "Охлаждение создало отрицательное давление")
+
+/// Обычная жила меняет соседнюю пустую породу, сохраняя археологическое включение.
+/datum/unit_test/xenoarchaeology_ore_veins/Run()
+	var/turf/closed/mineral/xenoarchaeology/rock = run_loc_floor_bottom_left.ChangeTurf(/turf/closed/mineral/xenoarchaeology)
+	var/turf/closed/mineral/neighbor = get_step(rock, NORTH).ChangeTurf(/turf/closed/mineral)
+	rock.spread_vein(/obj/item/stack/ore/iron)
+	TEST_ASSERT_NULL(rock.mineral_type, "Распространение жилы заменило археологический образец")
+	TEST_ASSERT_EQUAL(rock.scan_state, "rock_strange", "Распространение жилы подменило метку сканера")
+	neighbor.spread_vein(/obj/item/stack/ore/iron)
+	TEST_ASSERT_EQUAL(neighbor.mineral_type, /obj/item/stack/ore/iron, "Жила не распространяется в обычную породу")
+	rock.gets_drilled()
+	TEST_ASSERT_NOTNULL(locate(/obj/item/xenoarch/strange_rock) in run_loc_floor_bottom_left, "После распространения жилы потерян образец")
+
+/datum/unit_test/xenoarchaeology_ore_veins/Destroy()
+	get_step(run_loc_floor_bottom_left, NORTH).ChangeTurf(/turf/open/indestructible)
+	run_loc_floor_bottom_left.ChangeTurf(/turf/open/indestructible)
+	return ..()
+
+/// Проходим настоящую цепочку удара, а не только возвращаемый флаг item_interaction().
+/datum/unit_test/xenoarchaeology_machine_attacks/Run()
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human/consistent)
+	var/obj/item/crowbar/weapon = allocate(__IMPLIED_TYPE__)
+	user.put_in_active_hand(weapon)
+	user.set_combat_mode(TRUE)
+	for(var/machine_type in list(/obj/machinery/xenoarch/scanner, /obj/machinery/xenoarch/digger, /obj/machinery/xenoarch/researcher, /obj/machinery/xenoarch_lab/analyzer, /obj/machinery/xenoarch_lab/spectrometer, /obj/machinery/xenoarch_lab/harvester))
+		var/obj/machinery/machine = allocate(machine_type)
+		for(var/unavailable_state in list("power", "anchor", "panel", "active"))
+			machine.set_is_operational(unavailable_state != "power")
+			machine.set_anchored(unavailable_state != "anchor")
+			machine.panel_open = unavailable_state == "panel"
+			if(istype(machine, /obj/machinery/xenoarch_lab))
+				var/obj/machinery/xenoarch_lab/lab = machine
+				lab.active = unavailable_state == "active"
+			var/old_integrity = machine.get_integrity()
+			weapon.melee_attack_chain(user, machine)
+			TEST_ASSERT(machine.get_integrity() < old_integrity, "[machine_type] блокирует удар в состоянии [unavailable_state]")
+		qdel(machine)
+
+/// Фиксируем выбор мутации, чтобы проверка разрушения не зависела от случайного вида изменения ДНК.
+/datum/xenoartifact_effect/dnaswitch/test_fixture
+	var/mutation_attempts = 0
+
+/datum/xenoartifact_effect/dnaswitch/test_fixture/roll_and_change_genes(mob/living/carbon/human/receiver, chance)
+	mutation_attempts++
+	receiver.dna.add_mutation(/datum/mutation/clumsy, MUTATION_SOURCE_ACTIVATED)
+
+/datum/unit_test/xenoarchaeology_dna_destruction/Run()
+	var/obj/machinery/xenoartifact/holder = allocate(__IMPLIED_TYPE__)
+	QDEL_NULL(holder.first_effect)
+	QDEL_NULL(holder.secondary_effect)
+	var/datum/xenoartifact_effect/dnaswitch/test_fixture/effect = new(holder)
+	holder.first_effect = effect
+	var/mob/living/carbon/human/receiver = allocate(/mob/living/carbon/human/consistent)
+	TEST_ASSERT_NULL(receiver.dna.get_mutation(/datum/mutation/clumsy), "Тестовый персонаж уже имеет проверяемую мутацию")
+	holder.take_damage(holder.max_integrity * 10, BRUTE, BULLET)
+	TEST_ASSERT(QDELETED(holder), "Урон не разрушил артефакт")
+	TEST_ASSERT_EQUAL(effect.mutation_attempts, 4, "Разрушение не вызвало четыре изменения генов")
+	TEST_ASSERT_NOTNULL(receiver.dna.get_mutation(/datum/mutation/clumsy), "Разрушение не изменило ДНК персонажа")
+
+/// Платы используют собственную унаследованную иконку, а не состояния собранных станков.
+/datum/unit_test/xenoarchaeology_circuit_sprites/Run()
+	for(var/obj/item/circuitboard/machine/xenoarch/board_type as anything in subtypesof(/obj/item/circuitboard/machine/xenoarch))
+		TEST_ASSERT(initial(board_type.icon_state) in icon_states(initial(board_type.icon)), "Нет исходного спрайта платы [board_type]")

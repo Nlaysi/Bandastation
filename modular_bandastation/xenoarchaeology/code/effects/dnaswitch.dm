@@ -27,9 +27,6 @@
 		roll_and_change_genes(human_mob, 10 * seconds_per_tick)
 
 /datum/xenoartifact_effect/dnaswitch/do_effect_destroy()
-	. = ..()
-	if(!.)
-		return
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/human/human_mob in range(range+3, curr_turf))
 		for(var/i in 1 to 4)

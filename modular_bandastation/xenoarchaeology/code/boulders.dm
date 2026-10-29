@@ -70,7 +70,7 @@
 			return ITEM_INTERACT_BLOCKING
 		if(!GetComponent(/datum/component/gps))
 			AddComponent(/datum/component/gps, "[artifact_id]: археологический валун")
-		balloon_alert(user, "GPS-метка установлена")
+		balloon_alert(user, "установлена GPS-метка")
 		return ITEM_INTERACT_SUCCESS
 	if(istype(tool, /obj/item/xenoarch/core_sampler))
 		var/obj/item/xenoarch/core_sampler/sampler = tool
