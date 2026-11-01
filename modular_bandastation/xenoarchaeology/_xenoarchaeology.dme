@@ -5,6 +5,8 @@
 #include "code/special_artifacts.dm"
 #include "code/mechs.dm"
 #include "code/laboratory.dm"
+#include "code/containment.dm"
+#include "code/fossils.dm"
 #include "code/particles.dm"
 #include "code/tools.dm"
 #include "code/skill.dm"

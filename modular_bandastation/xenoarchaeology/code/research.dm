@@ -209,6 +209,11 @@
 	display_name = "Лаборатория ксеноархеологии"
 	description = "Стационарное изучение крупных артефактов и сбор их излучения."
 	prerequisite_nodes = list(/datum/techweb_node/basic_xenoarch)
-	unlocked_designs = list(/datum/design/board/xenoarch/pad, /datum/design/board/xenoarch/analyzer, /datum/design/board/xenoarch/spectrometer, /datum/design/board/xenoarch/harvester)
+	unlocked_designs = list(/datum/design/board/xenoarch/pad, /datum/design/board/xenoarch/analyzer, /datum/design/board/xenoarch/spectrometer, /datum/design/board/xenoarch/harvester, /datum/design/board/xenoarch/container)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS)
 	announce_channels = list(RADIO_CHANNEL_SCIENCE)
+
+/datum/design/board/xenoarch/container
+	name = "anomalous artifact container"
+	desc = "Плата переносного контейнера подавления артефактов."
+	build_path = /obj/item/circuitboard/machine/xenoarch/container

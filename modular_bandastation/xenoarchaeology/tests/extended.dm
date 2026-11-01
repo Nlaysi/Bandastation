@@ -224,6 +224,7 @@
 	var/list/object_types = typesof(/obj/item/xenoarch) + typesof(/obj/machinery/xenoarch) + typesof(/obj/machinery/xenoarch_lab) + typesof(/obj/machinery/xenoartifact)
 	object_types += list(/obj/item/storage/bag/xenoarch, /obj/item/storage/bag/xenoarch/advanced, /obj/item/storage/belt/utility/xenoarch, /obj/machinery/xenoarch_pad, /obj/machinery/power/xenoarch_crystal, /obj/item/stock_parts/power_store/cell/xenoarch)
 	object_types += list(/obj/vehicle/sealed/mecha/reticence/loaded/xenoarch, /obj/vehicle/sealed/mecha/odysseus/xenoarch, /obj/vehicle/sealed/mecha/savannah_ivanov/xenoarch, /obj/vehicle/sealed/mecha/durand/xenoarch)
+	object_types += typesof(/obj/item/xenoarch_fossil) + list(/obj/machinery/xenoarch_container, /obj/structure/xenoarch_skeleton)
 	for(var/obj/object_type as anything in object_types)
 		if(initial(object_type.abstract_type) == object_type)
 			continue

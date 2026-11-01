@@ -60,6 +60,7 @@
 
 /obj/effect/spawner/random/xenoarch/animal
 	loot = list(
+		/obj/effect/spawner/random/xenoarch/fossil = 3,
 		/obj/item/stack/sheet/sinew = 1,
 		/obj/item/stack/sheet/bone = 1,
 		/obj/item/stack/sheet/animalhide/goliath_hide = 1,

@@ -9,6 +9,8 @@
 	/// Единственный владелец эффекта; эффект не разделяется с батареями.
 	var/atom/holder
 	var/activated = FALSE
+	/// Контейнер приостанавливает излучение, сохраняя активацию и накопленный заряд.
+	var/suppressed = FALSE
 	var/current_charge = 0
 	var/maximum_charges
 	/// Заряд за две секунды, как в исходном модуле.
@@ -42,7 +44,7 @@
 
 /datum/xenoartifact_effect/proc/toggle_artifact_effect(reveal_toggle)
 	activated = !activated
-	if(activated)
+	if(activated && !suppressed)
 		START_PROCESSING(SSobj, src)
 	else
 		STOP_PROCESSING(SSobj, src)
@@ -59,7 +61,7 @@
 		holder.set_light(0)
 
 /datum/xenoartifact_effect/proc/try_drain_charge(amount)
-	if(!activated || QDELETED(holder) || amount < 0 || current_charge < amount)
+	if(suppressed || !activated || QDELETED(holder) || amount < 0 || current_charge < amount)
 		return FALSE
 	current_charge -= amount
 	return TRUE
@@ -81,7 +83,7 @@
 	return
 
 /datum/xenoartifact_effect/process(seconds_per_tick)
-	if(!activated || QDELETED(holder))
+	if(suppressed || !activated || QDELETED(holder))
 		return PROCESS_KILL
 	current_charge = min(current_charge + recharge_speed / 2 * seconds_per_tick, maximum_charges)
 	if(release_method == XENO_EFFECT_AURA)
@@ -89,6 +91,13 @@
 	else if(release_method == XENO_EFFECT_PULSE && current_charge >= activation_pulse_cost)
 		// Импульс — отдельное событие; его сила не зависит от длины тика подсистемы.
 		do_effect_pulse(2)
+
+/datum/xenoartifact_effect/proc/set_suppressed(new_suppressed)
+	suppressed = new_suppressed
+	if(activated && !suppressed)
+		START_PROCESSING(SSobj, src)
+	else
+		STOP_PROCESSING(SSobj, src)
 
 /// Копируются только параметры излучения; ссылки на прежнего владельца и жертв не передаются.
 /datum/xenoartifact_effect/proc/copy_to(atom/new_holder)

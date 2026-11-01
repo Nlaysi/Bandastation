@@ -110,5 +110,23 @@
     "git_blob": "e1aa7739f73608000d84915f420cd672af3356ae",
     "sha256": "809b69e70e45f3fb32ca5c879c1b042a143422a19ffef44721d544bcd35ed76b",
     "bytes": 2600
+  },
+  {
+    "local": "modular_bandastation/xenoarchaeology/icons/sierra/anomaly_cage.dmi",
+    "repository": "SierraBay/SierraBay12",
+    "source": "icons/obj/machines/research/anomaly_cage.dmi",
+    "revision": "4fec779a418a9ffdb57bf6f98107be053f085113",
+    "git_blob": "4268ec6f40064f502926369516b7d69ebe019922",
+    "sha256": "7bc5ab6abe77b3196d1acf68d8c6a1b0ba9f5286121d4185d0dad74fb37e6d33",
+    "bytes": 1671
+  },
+  {
+    "local": "modular_bandastation/xenoarchaeology/icons/sierra/xenoarchaeology_finds.dmi",
+    "repository": "SierraBay/SierraBay12",
+    "source": "icons/obj/xenoarchaeology_finds.dmi",
+    "revision": "4fec779a418a9ffdb57bf6f98107be053f085113",
+    "git_blob": "03c2d3a6f4329b806b3c8b287867e7852f05ceaa",
+    "sha256": "8c7ef65830b23a0d4079acbee81705f16375548b1adf4bbe77abc9a6a2225596",
+    "bytes": 69953
   }
 ]

@@ -16,6 +16,8 @@
 	var/datum/weakref/lab_owner
 	/// Особые устройства имеют собственную функцию вместо случайной пары эффектов.
 	var/random_effects = TRUE
+	/// Закрытый аномальный контейнер блокирует триггеры и оба эффекта.
+	var/containment_suppressed = FALSE
 	/// Номер внешнего вида NovaSector; три цвета кристалла делят одну вероятность.
 	var/artifact_style = 1
 	COOLDOWN_DECLARE(touch_cooldown)
@@ -42,8 +44,9 @@
 
 /// Всплеск вызывается разрушением в игре, а не любым qdel при уборке или завершении теста.
 /obj/machinery/xenoartifact/atom_destruction(damage_flag)
-	first_effect?.do_effect_destroy()
-	secondary_effect?.do_effect_destroy()
+	if(!containment_suppressed)
+		first_effect?.do_effect_destroy()
+		secondary_effect?.do_effect_destroy()
 	return ..()
 
 /obj/machinery/xenoartifact/update_icon_state()
@@ -53,6 +56,8 @@
 
 /// Смена состояния от дискретного воздействия и поддержание состояния от атмосферы различаются.
 /obj/machinery/xenoartifact/proc/trigger_effects(trigger, atmospheric_state = null)
+	if(containment_suppressed)
+		return
 	for(var/datum/xenoartifact_effect/effect in list(first_effect, secondary_effect))
 		if(effect.trigger != trigger)
 			continue
@@ -76,7 +81,7 @@
 		. += "\n\n### Вторичное излучение\n[secondary_effect.get_description()]"
 
 /obj/machinery/xenoartifact/proc/touch(mob/living/user)
-	if(!istype(user) || !COOLDOWN_FINISHED(src, touch_cooldown))
+	if(containment_suppressed || !istype(user) || !COOLDOWN_FINISHED(src, touch_cooldown))
 		return
 	COOLDOWN_START(src, touch_cooldown, 3 SECONDS)
 	var/mob/living/carbon/carbon = user
@@ -139,6 +144,8 @@
 	return ..()
 
 /obj/machinery/xenoartifact/process(seconds_per_tick)
+	if(containment_suppressed)
+		return
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/air = location?.return_air()
 	if(!air)
@@ -149,3 +156,8 @@
 	trigger_effects(XENO_TRIGGER_OXY, air.moles[/datum/gas/oxygen] >= 10)
 	trigger_effects(XENO_TRIGGER_CO2, air.moles[/datum/gas/carbon_dioxide] >= 10)
 	trigger_effects(XENO_TRIGGER_NITRO, air.moles[/datum/gas/nitrogen] >= 10)
+
+/obj/machinery/xenoartifact/proc/set_containment(new_suppressed)
+	containment_suppressed = new_suppressed
+	first_effect?.set_suppressed(new_suppressed)
+	secondary_effect?.set_suppressed(new_suppressed)

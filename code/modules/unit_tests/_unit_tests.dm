@@ -429,6 +429,7 @@
 #include "../../../modular_bandastation/xenoarchaeology/tests/xenoarchaeology.dm"
 #include "../../../modular_bandastation/xenoarchaeology/tests/extended.dm"
 #include "../../../modular_bandastation/xenoarchaeology/tests/plants.dm"
+#include "../../../modular_bandastation/xenoarchaeology/tests/transport_fossils.dm"
 // BANDASTATION ADDITION END
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"

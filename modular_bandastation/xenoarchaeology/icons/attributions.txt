@@ -48,3 +48,11 @@ plants/harvest.dmi:
 
 plants/seeds.dmi:
   Source: https://github.com/NovaSector/NovaSector/blob/3b84ce0ba3e02ed031d714d642d84ddaa6f7e9b9/modular_nova/modules/xenoarch/icons/seeds.dmi
+
+SierraBay12 / Baystation12 contributors — container and fossil sprites.
+License: CC BY-SA 3.0, per SierraBay12 README (unless noted otherwise upstream).
+Revision: 4fec779a418a9ffdb57bf6f98107be053f085113
+modular_bandastation/xenoarchaeology/icons/sierra/anomaly_cage.dmi:
+  Source: https://github.com/SierraBay/SierraBay12/blob/4fec779a418a9ffdb57bf6f98107be053f085113/icons/obj/machines/research/anomaly_cage.dmi
+modular_bandastation/xenoarchaeology/icons/sierra/xenoarchaeology_finds.dmi:
+  Source: https://github.com/SierraBay/SierraBay12/blob/4fec779a418a9ffdb57bf6f98107be053f085113/icons/obj/xenoarchaeology_finds.dmi
