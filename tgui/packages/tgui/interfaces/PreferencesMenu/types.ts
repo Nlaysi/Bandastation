@@ -94,6 +94,7 @@ export type Job = {
   donor_tier?: number;
   job_icon?: string;
   variant_titles?: string[];
+  alt_titles?: string[] | null;
 };
 
 export type Quirk = {
@@ -200,6 +201,7 @@ export type PreferencesMenuData = {
     }
   >;
   job_preferences: JobPreference[];
+  alt_job_titles: Record<string, string>;
 
   keybindings: Record<string, string[]>;
   overflow_role: string;
