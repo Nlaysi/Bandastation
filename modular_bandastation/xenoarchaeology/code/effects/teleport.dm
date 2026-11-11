@@ -63,6 +63,7 @@
 		return FALSE
 	do_sparks(rand(3,6), 1, src.holder)
 	var/turf/target_turf = pick(orange(get_turf(receiver), max_range * weakness))
-	do_teleport(receiver, target_turf, 4)
+	if(!target_turf || !do_teleport(receiver, target_turf, 4))
+		return FALSE
 	do_sparks(rand(3,6), 1,  get_turf(receiver))
 	return TRUE

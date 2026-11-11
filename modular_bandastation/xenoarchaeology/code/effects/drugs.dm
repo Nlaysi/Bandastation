@@ -54,5 +54,5 @@
 	if(!ishuman(receiver))
 		return FALSE
 	var/mob/living/carbon/carbon_mob = receiver
-	carbon_mob.set_drugginess(power SECONDS * weakened)
+	carbon_mob.set_drugginess_if_lower(power SECONDS * weakened)
 	return TRUE

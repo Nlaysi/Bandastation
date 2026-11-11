@@ -20,8 +20,10 @@
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/human_mob = user
-	run_send_messages(human_mob, 50, 80)
-	human_mob.adjust_dizzy_up_to(3 SECONDS, 15 SECONDS)
+	var/weakness = run_send_messages(human_mob, 50, 80)
+	if(!weakness)
+		return
+	human_mob.adjust_dizzy_up_to(3 SECONDS * weakness, 15 SECONDS)
 
 /datum/xenoartifact_effect/feelings/do_effect_aura(seconds_per_tick)
 	. = ..()
@@ -29,8 +31,10 @@
 		return
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/human/human_mob in range(range, curr_turf))
-		run_send_messages(human_mob, 2.5, 5, seconds_per_tick)
-		human_mob.adjust_dizzy_up_to(1.5 SECONDS * seconds_per_tick, 15 SECONDS)
+		var/weakness = run_send_messages(human_mob, 2.5, 5, seconds_per_tick)
+		if(!weakness)
+			continue
+		human_mob.adjust_dizzy_up_to(1.5 SECONDS * seconds_per_tick * weakness, 15 SECONDS)
 
 /datum/xenoartifact_effect/feelings/do_effect_pulse(seconds_per_tick)
 	. = ..()
@@ -38,19 +42,24 @@
 		return
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/human/human_mob in range(range, curr_turf))
-		run_send_messages(human_mob, 80, 100)
-		human_mob.adjust_dizzy_up_to(3 SECONDS, 10 SECONDS)
+		var/weakness = run_send_messages(human_mob, 80, 100)
+		if(!weakness)
+			continue
+		human_mob.adjust_dizzy_up_to(3 SECONDS * weakness, 10 SECONDS)
 		if(prob(25))
-			human_mob.adjust_dizzy_up_to(5 SECONDS, 30 SECONDS)
+			human_mob.adjust_dizzy_up_to(5 SECONDS * weakness, 30 SECONDS)
 
 /datum/xenoartifact_effect/feelings/do_effect_destroy()
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/human/human_mob in range(7, curr_turf))
-		run_send_messages(human_mob, 100, 0)
-		human_mob.adjust_dizzy(30 SECONDS)
+		var/weakness = run_send_messages(human_mob, 100, 0)
+		if(!weakness)
+			continue
+		human_mob.adjust_dizzy(30 SECONDS * weakness)
 
 /**
  * Randomly selects between major and minor mood and applies it to the mob
+ * Returns susceptibility for the accompanying dizziness, or zero when protected.
  *
  * Arguments:
  * * receiver - who will receive mood event
@@ -58,10 +67,14 @@
  * * normal_message_chance - chance to receive minor mood event
  */
 /datum/xenoartifact_effect/feelings/proc/run_send_messages(mob/receiver, drastic_message_chance = 0, normal_message_chance = 0, seconds_per_tick = 1)
-	if(SPT_PROB(drastic_message_chance, seconds_per_tick))
+	var/weakness = get_xenoartifact_susceptibility(receiver)
+	. = weakness
+	if(!weakness)
+		return
+	if(SPT_PROB(drastic_message_chance * weakness, seconds_per_tick))
 		send_drastic_message(receiver)
 		return
-	if(SPT_PROB(normal_message_chance, seconds_per_tick))
+	if(SPT_PROB(normal_message_chance * weakness, seconds_per_tick))
 		send_minor_message(receiver)
 
 /// Send major mood event

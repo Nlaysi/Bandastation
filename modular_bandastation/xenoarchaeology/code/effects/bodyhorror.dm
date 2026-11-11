@@ -24,6 +24,7 @@
  * * add_range - bonus range to the base artifact's
  */
 /datum/xenoartifact_effect/bodyhorror/proc/mutatelimbs(add_range)
+	. = FALSE
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/carbon_mob in range(range + add_range, curr_turf))
 		var/weakness = get_xenoartifact_susceptibility(carbon_mob)
@@ -31,6 +32,7 @@
 			continue
 
 		var/list/zone_candidates = carbon_mob.get_missing_limbs()
+		zone_candidates -= list(BODY_ZONE_HEAD, BODY_ZONE_CHEST)
 		for(var/obj/item/bodypart/bodypart in carbon_mob.bodyparts)
 			if(bodypart.body_zone == BODY_ZONE_HEAD || bodypart.body_zone == BODY_ZONE_CHEST)
 				continue
@@ -70,4 +72,4 @@
 		var/mob/living/basic/living_limb_flesh/parasite = new(new_bodypart)
 		new_bodypart.replace_limb(carbon_mob)
 		parasite.register_to_limb(new_bodypart)
-		return TRUE
+		. = TRUE

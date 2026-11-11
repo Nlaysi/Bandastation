@@ -29,13 +29,15 @@
 				var/obj/machinery/porta_turret_cover/chosen_turret = chosen_machine
 				chosen_machine = chosen_turret.parent_turret
 
+			if(QDELETED(chosen_machine))
+				continue
 			if((chosen_machine.resistance_flags & INDESTRUCTIBLE) || is_type_in_typecache(chosen_machine, GLOB.blacklisted_malf_machines))
-				return FALSE
+				continue
 
 			playsound(holder, 'sound/misc/interference.ogg', 50, ignore_walls = TRUE)
 			chosen_machine.audible_message(span_userdanger("Из [chosen_machine] доносится громкое электрическое гудение!"))
 			if(QDELETED(chosen_machine))
-				return
+				continue
 
 			new /mob/living/basic/mimic/copy/machine(get_turf(chosen_machine), chosen_machine, holder, TRUE)
 

@@ -39,6 +39,9 @@
 		/obj/machinery/power/xenoarch_crystal = 200,
 		/obj/machinery/xenoartifact/cloner = 200,
 		/obj/machinery/xenoartifact/replicator = 200,
+		/obj/machinery/xenoartifact/giant_drill = 200,
+		/obj/machinery/xenoartifact/recruitment_beacon = 10,
+		/obj/machinery/xenoartifact/cult_pylon = 100,
 		/obj/machinery/xenoartifact = 2000,
 		/obj/vehicle/sealed/mecha/reticence/loaded/xenoarch = 25,
 		/obj/vehicle/sealed/mecha/odysseus/xenoarch = 25,
@@ -59,6 +62,8 @@
 	resolved = TRUE
 	if(stabilised || prob(50))
 		var/obj/artifact = new artifact_type(drop_location())
+		if(!QDELETED(artifact))
+			artifact.AddComponent(/datum/component/xenoarch_catalogue_identity, artifact_id, artifact_age)
 		if(!stabilised && !QDELETED(artifact))
 			artifact.update_integrity(10)
 	qdel(src)

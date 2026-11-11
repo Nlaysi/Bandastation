@@ -101,23 +101,16 @@
 		to_chat(to_swap, span_warning("Шапочка из фольги вибрирует, защищая ваш мозг от невидимых лучей!"))
 		return FALSE
 
+	if(!can_swap_mind(caster) || !can_swap_mind(to_swap))
+		holder.balloon_alert(to_swap, "воздействие сорвалось!")
+		holder.balloon_alert(caster, "воздействие сорвалось!")
+		return FALSE
+
 	// Gives the target a mind if they don't have one
 	if(!to_swap.mind)
 		to_swap.mind_initialize()
 	if(!caster.mind)
 		caster.mind_initialize()
-
-	var/datum/mind/mind_to_swap = to_swap.mind
-	if(caster.can_block_magic(MAGIC_RESISTANCE_MIND) || to_swap.can_block_magic(MAGIC_RESISTANCE_MIND) \
-		|| mind_to_swap.has_antag_datum(/datum/antagonist/wizard) \
-		|| mind_to_swap.has_antag_datum(/datum/antagonist/cult) \
-		|| mind_to_swap.has_antag_datum(/datum/antagonist/changeling) \
-		|| mind_to_swap.has_antag_datum(/datum/antagonist/rev) \
-		|| mind_to_swap.key?[1] == "@" \
-	)
-		holder.balloon_alert(to_swap, "воздействие сорвалось!")
-		holder.balloon_alert(caster, "воздействие сорвалось!")
-		return FALSE
 
 	// MIND TRANSFER BEGIN
 
@@ -127,7 +120,6 @@
 	if(!caster_mind || !to_swap_mind)
 		return FALSE
 
-	// Checking if minds/bodies are already in list and adding them there, if not.
 	// Checking if minds/bodies are already in list and adding them there, if not.
 	var/found_caster
 	var/found_to_swap
@@ -170,4 +162,17 @@
 	SEND_SOUND(caster, sound('sound/effects/magic/mandswap.ogg'))
 	SEND_SOUND(to_swap, sound('sound/effects/magic/mandswap.ogg'))
 
+	return TRUE
+
+/// Случайный первый участник имеет ту же защиту разума, что и второй.
+/datum/xenoartifact_effect/bodyswap/proc/can_swap_mind(mob/living/carbon/target)
+	if(QDELETED(target) || target.stat == DEAD || HAS_TRAIT(target, TRAIT_NO_MINDSWAP) || HAS_TRAIT(target, TRAIT_MIND_TEMPORARILY_GONE) || target.can_block_magic(MAGIC_RESISTANCE_MIND))
+		return FALSE
+	var/datum/mind/target_mind = target.mind
+	if(target_mind?.has_antag_datum(/datum/antagonist/wizard) \
+		|| target_mind?.has_antag_datum(/datum/antagonist/cult) \
+		|| target_mind?.has_antag_datum(/datum/antagonist/changeling) \
+		|| target_mind?.has_antag_datum(/datum/antagonist/rev) \
+		|| IS_FAKE_KEY(target_mind?.key))
+		return FALSE
 	return TRUE

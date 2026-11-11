@@ -1,5 +1,11 @@
 #ifndef BANDASTATION_XENOARCH_DEFINES
 #define BANDASTATION_XENOARCH_DEFINES
+/// Однократная награда в местных очках исследователя за раскопанную находку.
+#define XENOARCH_CATALOGUE_REWARD 20
+/// Максимальная длина ручного названия записи, в символах.
+#define XENOARCH_CATALOGUE_TITLE_LIMIT 64
+/// Максимальная длина ручных наблюдений, в символах.
+#define XENOARCH_CATALOGUE_NOTES_LIMIT 1024
 ///artifact energy release method
 #define XENO_EFFECT_TOUCH 0
 #define XENO_EFFECT_AURA 1

@@ -126,12 +126,20 @@
 	else if(istype(reagent, /datum/reagent/toxin))
 		trigger_effects(XENO_TRIGGER_TOXIN)
 
+/** Прямое нанесение расходует дозу открытой ёмкости; остальные способы используют сигнал reagent exposure. */
 /obj/machinery/xenoartifact/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
-	if(istype(tool, /obj/item/reagent_containers))
-		// Реальное нанесение реагентов идёт через expose_reagents и не требует выплёскивать всю ёмкость.
-		for(var/datum/reagent/reagent as anything in tool.reagents.reagent_list)
-			if(reagent.volume >= 1)
-				on_reagent(src, reagent, reagent.volume)
+	if(istype(tool, /obj/item/reagent_containers/cup))
+		var/obj/item/reagent_containers/cup/container = tool
+		if(!container.is_open_container() || !container.is_drainable() || !container.reagents?.total_volume || (container.reagents.flags & NO_SPLASH))
+			return ITEM_INTERACT_BLOCKING
+		if(!user.is_holding(container) || !user.can_perform_action(src, NEED_DEXTERITY|NEED_HANDS|FORBID_TELEKINESIS_REACH))
+			return ITEM_INTERACT_BLOCKING
+		var/amount = min(container.amount_per_transfer_from_this, container.reagents.total_volume)
+		if(amount <= 0)
+			return ITEM_INTERACT_BLOCKING
+		container.reagents.expose(src, TOUCH, amount / container.reagents.total_volume)
+		if(!QDELETED(container))
+			container.reagents.remove_all(amount)
 		return ITEM_INTERACT_SUCCESS
 	if(tool.get_temperature() > 700)
 		trigger_effects(XENO_TRIGGER_HEAT)

@@ -233,6 +233,8 @@
 		update_appearance()
 
 /obj/machinery/xenoartifact/replicator/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(istype(tool, /obj/item/xenoarch/drone_designator))
+		return ..()
 	if(feedstock || tool.item_flags & (ABSTRACT|DROPDEL) || tool.resistance_flags & INDESTRUCTIBLE || istype(tool, /obj/item/storage) || length(tool.contents))
 		return ITEM_INTERACT_BLOCKING
 	if(user.transferItemToLoc(tool, src))

@@ -35,10 +35,7 @@
 /datum/xenoartifact_effect/disgust/do_effect_destroy()
 	var/turf/curr_turf = get_turf(holder)
 	for(var/mob/living/carbon/living_mob in range(7, curr_turf))
-		var/weakness = get_xenoartifact_susceptibility(living_mob)
-		if(!weakness)
-			continue
-		living_mob.SetSleeping(weakness * (10 SECONDS)) //0 resistance gives you 10 seconds of sleep
+		apply_disgust(living_mob, 200)
 
 /**
  * Applies disgust to mob
@@ -58,4 +55,4 @@
 			span_notice("Вам нехорошо."),
 			span_notice("У вас болит живот."),
 		))
-		human_mob.adjust_disgust(power)
+		human_mob.adjust_disgust(power * weakness)

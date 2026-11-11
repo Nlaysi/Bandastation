@@ -147,10 +147,22 @@
 	research += value
 	qdel(sample)
 
+/** Общий каталог не привязан к очереди образцов и очкам конкретного исследователя. */
 /obj/machinery/xenoarch/researcher/ui_data(mob/user)
 	. = ..()
 	.["research"] = research
 	.["maxResearch"] = max_research
+	var/list/entries = list()
+	for(var/id in GLOB.xenoarch_catalogue)
+		var/datum/xenoarch_catalogue_entry/entry = GLOB.xenoarch_catalogue[id]
+		entries += list(entry.get_data())
+	.["catalogue"] = list(
+		"entries" = entries,
+		"reward" = XENOARCH_CATALOGUE_REWARD,
+		"titleLimit" = XENOARCH_CATALOGUE_TITLE_LIMIT,
+		"notesLimit" = XENOARCH_CATALOGUE_NOTES_LIMIT,
+		"printReady" = COOLDOWN_FINISHED(src, catalogue_print_cooldown),
+	)
 
 /// Статический выбор проверяется сервером; списание предшествует созданию награды.
 /obj/machinery/xenoarch/researcher/proc/redeem(reward)
@@ -178,12 +190,15 @@
 	new reward_type(drop_location())
 	return TRUE
 
+/** Действия журнала используют тот же серверный контроль доступа TGUI, что и обмен очков. */
 /obj/machinery/xenoarch/researcher/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
 	. = ..()
 	if(.)
 		return
 	if(action == "redeem")
 		return redeem(params["reward"])
+	if(action in list("catalogue_save", "catalogue_register", "catalogue_claim", "catalogue_print"))
+		return handle_catalogue_action(action, params, ui.user)
 
 /obj/item/circuitboard/machine/xenoarch
 	abstract_type = /obj/item/circuitboard/machine/xenoarch

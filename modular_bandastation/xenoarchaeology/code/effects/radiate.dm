@@ -2,6 +2,8 @@
 	log_name = "Радиация"
 	/// How much radiation are we pulsing
 	var/radiation_amount
+	/// Накопленное время сохраняет исходный интервал ауры в две секунды.
+	var/aura_elapsed = 0
 
 /datum/xenoartifact_effect/radiate/New()
 	. = ..()
@@ -28,7 +30,10 @@
 	var/turf/holder_turf = get_turf(holder)
 	if(isnull(holder_turf))
 		return FALSE
-	radiation_pulse(source = holder_turf, max_range = range, threshold = 0.3, chance = 10  * radiation_amount)
+	aura_elapsed += seconds_per_tick
+	while(aura_elapsed >= 2)
+		aura_elapsed -= 2
+		radiation_pulse(source = holder_turf, max_range = range, threshold = 0.3, chance = 10 * radiation_amount)
 
 /datum/xenoartifact_effect/radiate/do_effect_pulse(seconds_per_tick)
 	. = ..()

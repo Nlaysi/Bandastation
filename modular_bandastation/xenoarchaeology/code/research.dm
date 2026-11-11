@@ -190,11 +190,6 @@
 	desc = "Плата площадки анализа артефактов."
 	build_path = /obj/item/circuitboard/machine/xenoarch/pad
 
-/datum/design/board/xenoarch/analyzer
-	name = "artifact radiation analyzer"
-	desc = "Плата анализатора излучения артефактов."
-	build_path = /obj/item/circuitboard/machine/xenoarch/analyzer
-
 /datum/design/board/xenoarch/spectrometer
 	name = "radiocarbon spectrometer"
 	desc = "Плата спектрометра геологических кернов."
@@ -205,11 +200,16 @@
 	desc = "Плата сборщика экзотических частиц."
 	build_path = /obj/item/circuitboard/machine/xenoarch/harvester
 
+/datum/design/board/xenoarch/controlled_spectrometer
+	name = "controlled artifact spectrometer"
+	desc = "Плата спектрометра с ручной настройкой, охлаждением и защитным экраном."
+	build_path = /obj/item/circuitboard/machine/xenoarch/controlled_spectrometer
+
 /datum/techweb_node/xenoarch_machines
 	display_name = "Лаборатория ксеноархеологии"
 	description = "Стационарное изучение крупных артефактов и сбор их излучения."
 	prerequisite_nodes = list(/datum/techweb_node/basic_xenoarch)
-	unlocked_designs = list(/datum/design/board/xenoarch/pad, /datum/design/board/xenoarch/analyzer, /datum/design/board/xenoarch/spectrometer, /datum/design/board/xenoarch/harvester, /datum/design/board/xenoarch/container)
+	unlocked_designs = list(/datum/design/board/xenoarch/pad, /datum/design/board/xenoarch/spectrometer, /datum/design/board/xenoarch/harvester, /datum/design/board/xenoarch/container, /datum/design/board/xenoarch/controlled_spectrometer, /datum/design/board/xenoarch/drone_pad, /datum/design/xenoarch/drone_designator)
 	research_costs = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS)
 	announce_channels = list(RADIO_CHANNEL_SCIENCE)
 
@@ -217,3 +217,16 @@
 	name = "anomalous artifact container"
 	desc = "Плата переносного контейнера подавления артефактов."
 	build_path = /obj/item/circuitboard/machine/xenoarch/container
+
+/** Постройка площадки доступна вместе с остальной лабораторией. */
+/datum/design/board/xenoarch/drone_pad
+	name = "archaeological transport drone pad"
+	desc = "Плата посадочной площадки транспортного дрона."
+	build_path = /obj/item/circuitboard/machine/xenoarch/drone_pad
+
+/** Целеуказатель печатается на существующих протолатах науки и снабжения. */
+/datum/design/xenoarch/drone_designator
+	name = "archaeological drone designator"
+	desc = "Вызов транспортного дрона к крупной находке."
+	build_path = /obj/item/xenoarch/drone_designator
+	materials = list(/datum/material/iron = SHEET_MATERIAL_AMOUNT, /datum/material/glass = HALF_SHEET_MATERIAL_AMOUNT, /datum/material/bluespace = HALF_SHEET_MATERIAL_AMOUNT)

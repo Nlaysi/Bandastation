@@ -44,6 +44,8 @@
 	/// Секунды анализа, в отличие от зарядов батареи.
 	var/progress = 0
 	var/scan_duration = 10
+	/// Одноразовая анимация консоли; приборы с постоянным рабочим состоянием её отключают.
+	var/scan_animation = "xenoarch_console_working"
 	var/report = ""
 	var/datum/weakref/target_ref
 	var/datum/weakref/working_pad
@@ -77,9 +79,17 @@
 /obj/machinery/xenoarch_lab/proc/get_sample()
 	return locate(/obj/item/xenoarch/core_sampler) in contents
 
-/// При каждом обращении площадка ищется заново: перенос или удаление не оставляет висячей связи.
+/** Активная лаборатория сохраняет занятую площадку; поиск свободной выполняется только до начала работы. */
 /obj/machinery/xenoarch_lab/proc/get_pad()
+	if(active && (mode == "analyzer" || mode == "harvester"))
+		var/obj/machinery/xenoarch_pad/pad = working_pad?.resolve()
+		if(pad?.anchored && isturf(pad.loc) && pad.z == z && get_dist(src, pad) == 1 && pad.scan_owner?.resolve() == src)
+			return pad
+		return null
 	for(var/obj/machinery/xenoarch_pad/pad in orange(1, src))
+		var/obj/machinery/xenoarch_lab/owner = pad.scan_owner?.resolve()
+		if(owner?.active && owner != src)
+			continue
 		if(pad.anchored)
 			return pad
 	return null
@@ -88,6 +98,10 @@
 	for(var/obj/target in get_turf(pad))
 		if(target.invisibility || HAS_TRAIT(target, TRAIT_UNDERFLOOR))
 			continue
+		if(istype(target, /obj/machinery/xenoartifact/giant_drill))
+			var/obj/machinery/xenoartifact/giant_drill/drill = target
+			if(drill.enabled)
+				continue
 		if(istype(target, /obj/machinery/xenoartifact) || istype(target, /obj/machinery/power/xenoarch_crystal) || ismecha(target) || istype(target, /obj/structure/constructshell) || istype(target, /obj/machinery/power/supermatter_crystal/shard))
 			return target
 	return null
@@ -187,8 +201,8 @@
 	if(pad)
 		pad.scan_owner = WEAKREF(src)
 		pad.update_appearance()
-	if(mode == "analyzer")
-		flick("xenoarch_console_working", src)
+	if(mode == "analyzer" && scan_animation)
+		flick(scan_animation, src)
 	return TRUE
 
 /obj/machinery/xenoarch_lab/proc/start_harvest()
@@ -284,6 +298,7 @@
 	if(progress >= scan_duration)
 		finish_scan()
 
+/** Завершённый анализ сохраняет паспорт крупных находок перед освобождением цели и печатью. */
 /obj/machinery/xenoarch_lab/proc/finish_scan()
 	if(mode == "spectrometer")
 		var/obj/item/xenoarch/core_sampler/sample = get_sample()
@@ -304,13 +319,17 @@
 			report = "Каменный идол с полостью, пригодной для заселения конструктом."
 		else
 			report = "Образец сверхматерии. Энергетически нестабилен; требует штатных мер обращения со сверхматерией."
+		catalogue_analysis(target)
 	stop_work()
 	print_report()
 
+/** Печатает последний отчёт; для крупных находок добавляет связь с общей записью каталога. */
 /obj/machinery/xenoarch_lab/proc/print_report()
 	if(!length(report) || !ready())
 		return FALSE
 	var/obj/item/paper/xenoarch_report/paper = new(drop_location())
+	if(catalogue_id)
+		paper.add_raw_text(html_encode("Каталожная метка: [catalogue_id]\n\n"))
 	paper.add_raw_text(html_encode(report))
 	playsound(src, 'sound/machines/printer.ogg', 25, FALSE)
 	return TRUE

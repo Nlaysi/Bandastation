@@ -1,5 +1,135 @@
 #include "../code/artifact_defines.dm"
 
+/// Минеральная клетка восстанавливается и после раннего провала проверки таймера бура.
+/datum/unit_test/xenoarch_sierra_drill_fixture
+	abstract_type = /datum/unit_test/xenoarch_sierra_drill_fixture
+	/// Восстанавливаемая клетка породы.
+	var/turf/rock
+	/// Исходный тип клетки тестовой карты.
+	var/original_turf_type
+	/// Бур принадлежит allocate; ссылка нужна для отмены перед восстановлением карты.
+	var/obj/machinery/xenoartifact/giant_drill/drill
+	/// Оператор штатного включения и выключения.
+	var/mob/living/carbon/human/operator
+
+/datum/unit_test/xenoarch_sierra_drill_fixture/proc/prepare_drill()
+	drill = allocate(__IMPLIED_TYPE__)
+	operator = allocate(/mob/living/carbon/human/consistent)
+	rock = get_step(drill, EAST)
+	original_turf_type = rock.type
+	rock = rock.ChangeTurf(/turf/closed/mineral/iron)
+	drill.attack_hand(operator, list())
+	drill.Move(rock)
+
+/datum/unit_test/xenoarch_sierra_drill_fixture/Destroy()
+	drill?.cancel_drilling()
+	drill = null
+	operator = null
+	if(rock)
+		rock.ChangeTurf(original_turf_type)
+	rock = null
+	return ..()
+
+/// Настоящее столкновение запускает таймер, выдаёт руду и перемещает бур в новую клетку.
+/datum/unit_test/xenoarchaeology_sierra_drill
+	parent_type = /datum/unit_test/xenoarch_sierra_drill_fixture
+
+/datum/unit_test/xenoarchaeology_sierra_drill/Run()
+	prepare_drill()
+	TEST_ASSERT_NOTNULL(drill.drill_timer, "Столкновение не запустило бур")
+	var/deadline = world.time + 3 SECONDS
+	UNTIL(!drill.drill_timer || world.time >= deadline)
+	TEST_ASSERT(isopenturf(rock), "Бур не добыл минеральную породу")
+	TEST_ASSERT_EQUAL(get_turf(drill), rock, "Бур не переместился после добычи")
+	TEST_ASSERT(!drill.anchored, "Бур остался закреплён после цикла")
+	var/obj/item/stack/ore/iron/ore = locate() in rock
+	TEST_ASSERT_NOTNULL(ore, "Добыча бура потеряла штатную руду")
+	allocated += ore
+
+/// Выключение и принудительное перемещение отменяют реальный таймер до его штатного срока.
+/datum/unit_test/xenoarchaeology_sierra_drill_cancel
+	parent_type = /datum/unit_test/xenoarch_sierra_drill_fixture
+
+/datum/unit_test/xenoarchaeology_sierra_drill_cancel/Run()
+	prepare_drill()
+	TEST_ASSERT_NOTNULL(drill.drill_timer, "Не начат цикл для отмены")
+	drill.attack_hand(operator, list())
+	TEST_ASSERT_NULL(drill.drill_timer, "Выключение не удалило таймер")
+	var/deadline = world.time + 2 SECONDS
+	UNTIL(world.time >= deadline)
+	TEST_ASSERT(istype(rock, /turf/closed/mineral), "Выключенный бур добыл руду")
+	drill.attack_hand(operator, list())
+	drill.Move(rock)
+	TEST_ASSERT_NOTNULL(drill.drill_timer, "Повторное включение не разрешило цикл")
+	drill.forceMove(get_step(drill, NORTH))
+	TEST_ASSERT_NULL(drill.drill_timer, "Перемещение не отменило цикл")
+	deadline = world.time + 2 SECONDS
+	UNTIL(world.time >= deadline)
+	TEST_ASSERT(istype(rock, /turf/closed/mineral), "Перемещённый бур продолжил добычу")
+
+/// Новые типы проходят настоящую раскопку, получают происхождение и анализируются общей лабораторией.
+/datum/unit_test/xenoarchaeology_sierra_finds
+	parent_type = /datum/unit_test/xenoarch_catalogue_fixture
+
+/datum/unit_test/xenoarchaeology_sierra_finds/Run()
+	for(var/find_type in list(/obj/machinery/xenoartifact/giant_drill, /obj/machinery/xenoartifact/recruitment_beacon, /obj/machinery/xenoartifact/cult_pylon))
+		prepare_find(TRUE, find_type)
+		TEST_ASSERT_NOTNULL(target, "Не извлечена находка [find_type]")
+		TEST_ASSERT(target.icon_state in icon_states(target.icon), "Нет исходного спрайта [find_type]")
+		if(istype(target, /obj/machinery/xenoartifact/giant_drill))
+			var/obj/machinery/xenoartifact/giant_drill/drill = target
+			drill.enabled = TRUE
+			TEST_ASSERT(!lab.start_scan(), "Анализатор принял включённый бур")
+			drill.enabled = FALSE
+		TEST_ASSERT(lab.start_scan(), "Не начат анализ [find_type]")
+		lab.process(lab.scan_duration)
+		var/datum/component/xenoarch_catalogue_identity/identity = target.GetComponent(/datum/component/xenoarch_catalogue_identity)
+		TEST_ASSERT_EQUAL(identity.excavation_id, source_id, "Потеряно происхождение [find_type]")
+		TEST_ASSERT_NOTNULL(GLOB.xenoarch_catalogue[identity.catalogue_id], "Не создан паспорт [find_type]")
+		var/obj/machinery/xenoarch_drone_pad/receiver = allocate(__IMPLIED_TYPE__)
+		TEST_ASSERT(receiver.valid_payload(target), "Дрон не принимает извлечённый [find_type]")
+		var/datum/xenoarch_catalogue_entry/entry = GLOB.xenoarch_catalogue[identity.catalogue_id]
+		GLOB.xenoarch_catalogue -= identity.catalogue_id
+		qdel(entry)
+		GLOB.xenoarch_catalogue_next_id = original_counter
+		qdel(target)
+		qdel(pad)
+		qdel(lab)
+
+/// Пилон восстанавливает строитель, а обычное прикосновение человека не лечит конструкцию.
+/datum/unit_test/xenoarchaeology_sierra_pylon/Run()
+	var/obj/machinery/xenoartifact/cult_pylon/pylon = allocate(__IMPLIED_TYPE__)
+	pylon.update_integrity(10)
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human/consistent)
+	pylon.attack_hand(user, list())
+	TEST_ASSERT_EQUAL(pylon.get_integrity(), 10, "Обычное прикосновение отремонтировало пилон")
+	var/mob/living/basic/construct/artificer/builder = allocate(__IMPLIED_TYPE__)
+	pylon.attack_basic_mob(builder, list())
+	TEST_ASSERT_EQUAL(pylon.get_integrity(), 15, "Строитель не восстановил 5 прочности")
+	pylon.attack_basic_mob(builder, list())
+	TEST_ASSERT_EQUAL(pylon.get_integrity(), 20, "Повторный ремонт не восстановил пилон")
+	pylon.attack_basic_mob(builder, list())
+	TEST_ASSERT_EQUAL(pylon.get_integrity(), 20, "Ремонт превысил максимальную прочность")
+
+/** Закрытая ёмкость не воздействует на находку; открытая наносит реальную дозу через reagent exposure. */
+/datum/unit_test/xenoarchaeology_reagent_application/Run()
+	var/obj/machinery/xenoartifact/test_fixture/artifact = allocate(__IMPLIED_TYPE__)
+	artifact.first_effect = new /datum/xenoartifact_effect/heal(artifact)
+	artifact.first_effect.trigger = XENO_TRIGGER_WATER
+	artifact.first_effect.release_method = XENO_EFFECT_TOUCH
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human/consistent)
+	var/obj/item/reagent_containers/cup/beaker/beaker = allocate(__IMPLIED_TYPE__)
+	beaker.reagents.add_reagent(/datum/reagent/water, 40)
+	user.put_in_active_hand(beaker)
+	beaker.has_lid = TRUE
+	click_wrapper(user, artifact)
+	TEST_ASSERT(!artifact.first_effect.activated, "Закрытая ёмкость активировала химический триггер")
+	TEST_ASSERT_EQUAL(beaker.reagents.total_volume, 40, "Закрытая ёмкость потеряла реагенты")
+	beaker.has_lid = FALSE
+	click_wrapper(user, artifact)
+	TEST_ASSERT(artifact.first_effect.activated, "Реальное нанесение воды не активировало триггер")
+	TEST_ASSERT_EQUAL(beaker.reagents.total_volume, 40 - beaker.amount_per_transfer_from_this, "Нанесённая доза не израсходована")
+
 /// Предсказуемый носитель эффекта без случайного атмосферного триггера.
 /obj/machinery/xenoartifact/test_fixture
 	random_effects = FALSE
@@ -224,7 +354,7 @@
 	var/list/object_types = typesof(/obj/item/xenoarch) + typesof(/obj/machinery/xenoarch) + typesof(/obj/machinery/xenoarch_lab) + typesof(/obj/machinery/xenoartifact)
 	object_types += list(/obj/item/storage/bag/xenoarch, /obj/item/storage/bag/xenoarch/advanced, /obj/item/storage/belt/utility/xenoarch, /obj/machinery/xenoarch_pad, /obj/machinery/power/xenoarch_crystal, /obj/item/stock_parts/power_store/cell/xenoarch)
 	object_types += list(/obj/vehicle/sealed/mecha/reticence/loaded/xenoarch, /obj/vehicle/sealed/mecha/odysseus/xenoarch, /obj/vehicle/sealed/mecha/savannah_ivanov/xenoarch, /obj/vehicle/sealed/mecha/durand/xenoarch)
-	object_types += typesof(/obj/item/xenoarch_fossil) + list(/obj/machinery/xenoarch_container, /obj/structure/xenoarch_skeleton)
+	object_types += typesof(/obj/item/xenoarch_fossil) + list(/obj/machinery/xenoarch_container, /obj/structure/xenoarch_skeleton, /obj/machinery/xenoarch_drone_pad)
 	for(var/obj/object_type as anything in object_types)
 		if(initial(object_type.abstract_type) == object_type)
 			continue
@@ -383,3 +513,230 @@
 /datum/unit_test/xenoarchaeology_circuit_sprites/Run()
 	for(var/obj/item/circuitboard/machine/xenoarch/board_type as anything in subtypesof(/obj/item/circuitboard/machine/xenoarch))
 		TEST_ASSERT(initial(board_type.icon_state) in icon_states(initial(board_type.icon)), "Нет исходного спрайта платы [board_type]")
+
+/// Нагрев ограничен целью и даёт один результат за одинаковое время обработки.
+/datum/unit_test/xenoarchaeology_heating/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/temperature/heat/effect = allocate(__IMPLIED_TYPE__, holder)
+	effect.activated = TRUE
+	effect.target_temp = 500
+	effect.target_temp_high = 20000
+	var/turf/open/ground = get_turf(holder)
+	var/datum/gas_mixture/air = ground.return_air()
+	air.temperature = 300
+	effect.do_effect_aura(2)
+	var/long_tick_temperature = air.temperature
+	TEST_ASSERT(air.temperature > 300 && air.temperature <= 500, "Нагрев перескочил заданную температуру")
+	air.temperature = 300
+	effect.do_effect_aura(1)
+	effect.do_effect_aura(1)
+	TEST_ASSERT(abs(air.temperature - long_tick_temperature) < 0.01, "Нагрев зависит от разбиения времени на тики")
+	effect.do_effect_aura(1000)
+	TEST_ASSERT_EQUAL(air.temperature, 500, "Длинный тик не остановился на целевой температуре")
+
+/// Запрет обмена проверяется до создания разума, обычный обмен обратим.
+/datum/unit_test/xenoarchaeology_mindswap_protection/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/bodyswap/effect = allocate(__IMPLIED_TYPE__, holder)
+	var/mob/living/carbon/human/first = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/second = allocate(/mob/living/carbon/human/consistent)
+	first.mind_initialize()
+	second.mind_initialize()
+	var/datum/mind/first_mind = first.mind
+	var/datum/mind/second_mind = second.mind
+	for(var/blocked_trait in list(TRAIT_NO_MINDSWAP, TRAIT_MIND_TEMPORARILY_GONE))
+		ADD_TRAIT(first, blocked_trait, REF(src))
+		TEST_ASSERT(!effect.swap_bodies(), "Обмен обошёл [blocked_trait]")
+		TEST_ASSERT_EQUAL(first.mind, first_mind, "Защищённый персонаж сменил разум")
+		TEST_ASSERT_EQUAL(second.mind, second_mind, "Партнёр защищённого персонажа сменил разум")
+		REMOVE_TRAIT(first, blocked_trait, REF(src))
+	for(var/role_type in list(/datum/antagonist/wizard, /datum/antagonist/cult, /datum/antagonist/changeling, /datum/antagonist/rev))
+		var/datum/antagonist/role = allocate(role_type)
+		role.owner = first_mind
+		LAZYADD(first_mind.antag_datums, role)
+		TEST_ASSERT(!effect.can_swap_mind(first), "Разрешён обмен защищённого антагониста [role_type]")
+		qdel(role)
+	TEST_ASSERT(effect.swap_bodies(), "Обычные персонажи не обменялись телами")
+	TEST_ASSERT_EQUAL(first.mind, second_mind, "В первое тело не перенесён второй разум")
+	TEST_ASSERT_EQUAL(second.mind, first_mind, "Во второе тело не перенесён первый разум")
+	effect.return_bodies()
+	TEST_ASSERT_EQUAL(first.mind, first_mind, "Первый разум не вернулся")
+	TEST_ASSERT_EQUAL(second.mind, second_mind, "Второй разум не вернулся")
+
+/// Один импульс действительно создаёт паразитическую конечность у каждой цели.
+/datum/unit_test/xenoarchaeology_bodyhorror_targets/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/bodyhorror/effect = allocate(__IMPLIED_TYPE__, holder)
+	var/list/targets = list(allocate(/mob/living/carbon/human/consistent), allocate(/mob/living/carbon/human/consistent))
+	effect.activated = TRUE
+	effect.current_charge = effect.maximum_charges
+	effect.do_effect_pulse(2)
+	for(var/mob/living/carbon/human/target as anything in targets)
+		var/infected_limbs = 0
+		for(var/obj/item/bodypart/part as anything in target.bodyparts)
+			var/mob/living/basic/living_limb_flesh/parasite = locate() in part
+			if(parasite)
+				infected_limbs++
+				TEST_ASSERT_EQUAL(parasite.current_bodypart, part, "Паразит не зарегистрирован на конечности")
+		TEST_ASSERT_EQUAL(infected_limbs, 1, "Импульс пропустил одну из целей или заменил лишние конечности")
+
+/// Защищённая первая машина не мешает оживлению следующей разрешённой.
+/datum/unit_test/xenoarchaeology_machinery_targets/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/machinery_mess/effect = allocate(__IMPLIED_TYPE__, holder)
+	effect.range = 1
+	allocate(/obj/machinery/xenoarch/scanner)
+	allocate(/obj/machinery/xenoarch/scanner)
+	var/list/machines = list()
+	for(var/obj/machinery/machine in range(1, holder))
+		if(machine != holder)
+			machines += machine
+	TEST_ASSERT_EQUAL(length(machines), 2, "Не подготовлены две машины")
+	var/obj/machinery/protected = machines[1]
+	var/obj/machinery/vulnerable = machines[2]
+	protected.resistance_flags |= INDESTRUCTIBLE
+	// Вероятность при таком интервале равна 100%; порядок обхода берётся из настоящего range().
+	effect.try_animate(10000)
+	TEST_ASSERT(!QDELETED(protected), "Оживлена неразрушимая машина")
+	TEST_ASSERT(QDELETED(vulnerable), "Защищённая машина оборвала обход остальных целей")
+	TEST_ASSERT_NOTNULL(locate(/mob/living/basic/mimic/copy/machine) in get_turf(holder), "Не создан живой механизм")
+
+/// Частичная защита уменьшает тошноту, разрушение вызывает тошноту без сна.
+/datum/unit_test/xenoarchaeology_disgust_protection/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/disgust/effect = allocate(__IMPLIED_TYPE__, holder)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human/consistent)
+	var/obj/item/clothing/suit/bio_suit/suit = allocate(__IMPLIED_TYPE__)
+	TEST_ASSERT(target.equip_to_slot_if_possible(suit, ITEM_SLOT_OCLOTHING), "Не надет биокостюм")
+	effect.apply_disgust(target, 20)
+	TEST_ASSERT_EQUAL(target.disgust, 10, "Биокостюм не уменьшил тошноту вдвое")
+	target.set_disgust(0)
+	effect.do_effect_destroy()
+	TEST_ASSERT(target.disgust > 0, "Разрушение не вызвало тошноту")
+	TEST_ASSERT(!target.IsSleeping(), "Разрушение артефакта тошноты вызвало сон")
+
+/// Полный комплект блокирует оба эффекта настроения во всех режимах.
+/datum/unit_test/xenoarchaeology_feelings_protection/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human/consistent)
+	var/list/protection = list(
+		/obj/item/clothing/suit/bio_suit = ITEM_SLOT_OCLOTHING,
+		/obj/item/clothing/head/bio_hood = ITEM_SLOT_HEAD,
+		/obj/item/clothing/gloves/latex = ITEM_SLOT_GLOVES,
+		/obj/item/clothing/glasses/science = ITEM_SLOT_EYES,
+	)
+	for(var/item_type in protection)
+		TEST_ASSERT(target.equip_to_slot_if_possible(allocate(item_type), protection[item_type]), "Не надет предмет защиты [item_type]")
+	TEST_ASSERT_EQUAL(get_xenoartifact_susceptibility(target), 0, "Комплект не даёт полной защиты")
+	for(var/effect_type in list(/datum/xenoartifact_effect/feelings/good, /datum/xenoartifact_effect/feelings/bad))
+		var/datum/xenoartifact_effect/feelings/effect = allocate(effect_type, holder)
+		effect.activated = TRUE
+		effect.current_charge = effect.maximum_charges
+		effect.do_effect_touch(target)
+		effect.do_effect_aura(2)
+		effect.do_effect_pulse(2)
+		effect.do_effect_destroy()
+		TEST_ASSERT_EQUAL(target.get_timed_status_effect_duration(/datum/status_effect/dizziness), 0, "Полная защита пропустила головокружение [effect_type]")
+		for(var/category in list("drastic_effect_good", "minor_effect_good", "drastic_effect_bad", "minor_effect_bad"))
+			TEST_ASSERT_NULL(target.mob_mood?.mood_events[category], "Полная защита пропустила настроение [category]")
+		var/obj/item/glasses = target.glasses
+		target.temporarilyRemoveItemFromInventory(glasses)
+		TEST_ASSERT(abs(effect.run_send_messages(target, 0, 0) - 0.1) < 0.001, "Не учтена частичная защита настроения")
+		TEST_ASSERT(target.equip_to_slot_if_possible(glasses, ITEM_SLOT_EYES), "Не возвращены защитные очки")
+
+/// Повторное поражение продлевает статус при необходимости и никогда не сокращает его.
+/datum/unit_test/xenoarchaeology_status_duration/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human/consistent)
+	var/datum/xenoartifact_effect/drugs/drugs = allocate(__IMPLIED_TYPE__, holder)
+	drugs.do_drugs(target, 120)
+	drugs.do_drugs(target, 10)
+	TEST_ASSERT_EQUAL(target.get_timed_status_effect_duration(/datum/status_effect/drugginess), 120 SECONDS, "Слабое воздействие сократило наркотический эффект")
+	var/datum/xenoartifact_effect/sleepy/sleepy = allocate(__IMPLIED_TYPE__, holder)
+	target.Sleeping(60 SECONDS)
+	sleepy.do_effect_destroy()
+	TEST_ASSERT_EQUAL(target.AmountSleeping(), 60 SECONDS, "Разрушение сократило уже действующий сон")
+
+/// Импульсы теста удаляются из очереди и при раннем выходе с ошибкой.
+/datum/unit_test/xenoarchaeology_radiation_interval
+	/// Очередь до проверки нужна, чтобы не удалить чужие импульсы при очистке.
+	var/list/original_processing
+
+/datum/unit_test/xenoarchaeology_radiation_interval/Destroy()
+	if(original_processing)
+		for(var/datum/radiation_pulse_information/pulse as anything in (SSradiation.processing - original_processing))
+			SSradiation.processing -= pulse
+			qdel(pulse)
+	original_processing = null
+	return ..()
+
+/// Число и сила реальных импульсов не зависят от длины тика.
+/datum/unit_test/xenoarchaeology_radiation_interval/Run()
+	TEST_ASSERT(SSradiation.can_fire, "Подсистема радиации отключена")
+	original_processing = SSradiation.processing.Copy()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/radiate/effect = allocate(__IMPLIED_TYPE__, holder)
+	effect.activated = TRUE
+	effect.radiation_amount = 3
+	effect.do_effect_aura(1)
+	TEST_ASSERT_EQUAL(length(SSradiation.processing - original_processing), 0, "Аура излучает чаще двух секунд")
+	effect.do_effect_aura(1)
+	TEST_ASSERT_EQUAL(length(SSradiation.processing - original_processing), 1, "Два коротких тика не дали импульс")
+	effect.do_effect_aura(4)
+	TEST_ASSERT_EQUAL(length(SSradiation.processing - original_processing), 3, "Длинный тик потерял импульсы")
+	effect.do_effect_aura(0.5)
+	effect.do_effect_aura(1.5)
+	TEST_ASSERT_EQUAL(length(SSradiation.processing - original_processing), 4, "Потерян дробный остаток времени")
+	for(var/datum/radiation_pulse_information/pulse as anything in (SSradiation.processing - original_processing))
+		TEST_ASSERT_EQUAL(pulse.chance, 30, "Длина тика изменила силу отдельного импульса")
+
+/// Настоящая катушка получает разряд ровно на границе указанной начальной дальности.
+/datum/unit_test/xenoarchaeology_tesla_range/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/tesla/effect = allocate(__IMPLIED_TYPE__, holder)
+	TEST_ASSERT(effect.range >= 4 && effect.range <= 8, "Дальность Теслы вне исходного диапазона")
+	effect.range = 4
+	effect.activated = TRUE
+	TEST_ASSERT(findtext(effect.get_description(), "Радиус: 4 м."), "Паспорт показывает другую дальность")
+	var/turf/outside = get_step(get_step(get_step(get_step(get_step(holder, EAST), EAST), EAST), EAST), EAST)
+	var/obj/machinery/power/energy_accumulator/tesla_coil/coil = allocate(__IMPLIED_TYPE__, outside)
+	coil.set_anchored(TRUE)
+	effect.current_charge = effect.maximum_charges
+	effect.do_effect_pulse(2)
+	TEST_ASSERT_EQUAL(coil.stored_energy, 0, "Первая цель за указанным радиусом получила разряд")
+	coil.forceMove(get_step(outside, WEST))
+	effect.current_charge = effect.maximum_charges
+	effect.do_effect_pulse(2)
+	TEST_ASSERT(coil.stored_energy > 0, "Цель на границе указанного радиуса не получила разряд")
+	var/datum/xenoartifact_effect/tesla/copy = effect.copy_to(holder)
+	allocated += copy
+	TEST_ASSERT_EQUAL(copy.range, effect.range, "Батарея изменила дальность Теслы")
+
+/// Штатный запрет телепортации возвращает отказ вместо ложного успеха.
+/datum/unit_test/xenoarchaeology_teleport_failure/Run()
+	var/obj/machinery/xenoartifact/test_fixture/holder = allocate(__IMPLIED_TYPE__)
+	var/datum/xenoartifact_effect/teleport/effect = allocate(__IMPLIED_TYPE__, holder)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human/consistent)
+	var/turf/origin = get_turf(target)
+	ADD_TRAIT(target, TRAIT_NO_TELEPORT, REF(src))
+	TEST_ASSERT(!effect.teleport_around(target, 2), "Заблокированный перенос сообщил об успехе")
+	TEST_ASSERT_EQUAL(get_turf(target), origin, "Обойдён штатный запрет телепортации")
+
+/// Прямой клик целеуказателем не становится сырьём ни в пустом, ни в занятом репликаторе.
+/datum/unit_test/xenoarchaeology_replicator_delivery
+	parent_type = /datum/unit_test/xenoarch_drone_fixture
+
+/datum/unit_test/xenoarchaeology_replicator_delivery/Run()
+	prepare_transport()
+	var/obj/machinery/xenoartifact/replicator/replicator = allocate(__IMPLIED_TYPE__, get_turf(loader))
+	for(var/loaded in list(FALSE, TRUE))
+		var/obj/item/paper/feedstock
+		if(loaded)
+			feedstock = allocate(__IMPLIED_TYPE__, replicator)
+			replicator.feedstock = feedstock
+		click_wrapper(user, replicator)
+		TEST_ASSERT_NOTNULL(receiver.current_flight, "Прямой клик не отправил репликатор, сырьё: [loaded]")
+		TEST_ASSERT(user.is_holding(designator), "Репликатор поглотил целеуказатель")
+		TEST_ASSERT_EQUAL(replicator.feedstock, feedstock, "Наведение изменило сырьё репликатора")
+		TEST_ASSERT_EQUAL(replicator.loc, receiver.current_flight, "В рейс передан другой груз")
+		qdel(receiver.current_flight)

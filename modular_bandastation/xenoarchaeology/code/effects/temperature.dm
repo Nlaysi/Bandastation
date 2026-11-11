@@ -82,8 +82,8 @@
 	target_temp_high = 1000
 
 /datum/xenoartifact_effect/temperature/heat/New()
-	. = ..()
 	target_temp_high = rand(1000, 20000)
+	. = ..()
 
 /datum/xenoartifact_effect/temperature/heat/do_effect_touch(mob/user)
 	. = ..()
@@ -100,9 +100,10 @@
 	if(!.)
 		return
 	var/datum/gas_mixture/env = .
-	var/amount_to_change = (target_temp_high - env.temperature) / 8
 	if(env.temperature < target_temp)
-		env.temperature += amount_to_change * seconds_per_tick
+		// Экспоненциальное приближение сохраняет скорость при разной длине тика.
+		var/amount_to_change = (target_temp - env.temperature) * (1 - (1 - 1 / 8) ** seconds_per_tick)
+		env.temperature = min(target_temp, env.temperature + amount_to_change)
 		holder.air_update_turf(FALSE, FALSE)
 
 /datum/xenoartifact_effect/temperature/heat/do_effect_destroy()

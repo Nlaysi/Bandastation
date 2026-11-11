@@ -35,7 +35,7 @@
 		var/weakness = get_xenoartifact_susceptibility(carbon_mob)
 		if(!weakness)
 			continue
-		carbon_mob.SetSleeping(weakness * (10 SECONDS)) //0 resistance gives you 10 seconds of sleep
+		carbon_mob.Sleeping(weakness * (10 SECONDS))
 
 /**
  * Tries to apply sleepiness to the receiver
