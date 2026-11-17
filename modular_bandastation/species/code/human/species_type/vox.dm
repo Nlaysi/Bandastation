@@ -52,6 +52,17 @@
 	. = ..()
 	RegisterSignal(human, COMSIG_USER_PRE_ITEM_ATTACK, PROC_REF(try_eat_electronics))
 
+/datum/species/vox/randomize_features()
+	var/list/features = ..()
+	features[FEATURE_VOX_LIMB_MARKINGS] = "Default"
+	features[FEATURE_VOX_BODY_MARKINGS] = SPRITE_ACCESSORY_NONE
+	features[FEATURE_VOX_LIMB_MARKINGS_COLOR] = "#8a6036"
+	features[FEATURE_VOX_BODY_MARKINGS_COLOR] = "#8a6036"
+	features[FEATURE_VOX_SNOUT_COLOR] = "#FFB906"
+	features[FEATURE_VOX_QUILLS_COLOR] = "#361512"
+	features[FEATURE_VOX_FACIAL_QUILLS_COLOR] = "#361512"
+	return features
+
 /datum/species/vox/on_species_loss(mob/living/carbon/human/human, datum/species/new_species, pref_load)
 	. = ..()
 	UnregisterSignal(human, COMSIG_USER_PRE_ITEM_ATTACK)

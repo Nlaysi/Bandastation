@@ -205,6 +205,7 @@
 #include "death_moodlets.dm"
 #include "designs.dm"
 #include "dismemberment.dm"
+#include "dna_console_appearance.dm"
 #include "dna_infusion.dm"
 #include "door_access.dm"
 #include "door_control_assembly.dm"
