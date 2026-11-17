@@ -122,6 +122,10 @@
 	var/genetic_damage_pulse_timer = 0
 	/// Which dna string to edit with the pulse
 	var/genetic_damage_pulse_type
+	/// Pending positions for one simultaneous pulse across both DNA strings.
+	var/list/genetic_damage_pulse_queue
+	/// The subject must still own the scanner when the pulse timer expires.
+	var/datum/weakref/genetic_damage_pulse_subject
 	/// Cooldown for the genetic makeup transfer actions.
 	COOLDOWN_DECLARE(enzyme_copy_timer)
 
@@ -152,6 +156,24 @@
 	var/obj/machinery/dna_scannernew/connected_scanner = null
 	/// Current DNA Scanner occupant
 	var/mob/living/carbon/scanner_occupant = null
+	/// Immutable source appearance, used to avoid flattening the same portrait on every UI update.
+	var/portrait_appearance
+	/// Height changes on a dummy do not change its cached limb sprites.
+	var/portrait_height
+	/// Flattened PNG displayed inside the scrollable HTML panel.
+	var/appearance_portrait
+	/// Viewing direction of the isolated target portrait.
+	var/appearance_direction = SOUTH
+	/// Isolated body used to decode and render the desired DNA.
+	var/mob/living/carbon/human/dummy/appearance_target
+	/// Scanner subject that owns this draft; never keep the occupant alive through a draft.
+	var/datum/weakref/appearance_subject
+	/// Actual preference values decoded from the target, for validation of dependent features.
+	var/list/target_values
+	/// Original values and hashes allow reverting a choice without randomizing its encoding.
+	var/list/target_initial_values
+	var/target_initial_identity
+	var/target_initial_features
 
 	/// Used for setting tgui data - List of occupant mutations
 	var/list/tgui_occupant_mutations = list()
@@ -261,6 +283,61 @@
 	if(!CONFIG_GET(flag/no_default_techweb_link) && !stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 
+/obj/machinery/computer/dna_console/Destroy()
+	cancel_genetic_damage_pulse()
+	clear_appearance_target()
+	return ..()
+
+/// Release the draft when the occupant, scanner or console goes away.
+/obj/machinery/computer/dna_console/proc/clear_appearance_target()
+	QDEL_NULL(appearance_target)
+	appearance_subject = null
+	target_values = null
+	target_initial_values = null
+	target_initial_identity = null
+	target_initial_features = null
+	portrait_appearance = null
+	portrait_height = null
+	appearance_portrait = null
+	appearance_direction = SOUTH
+
+/// Find the existing DNA block that can actually encode this preference.
+/obj/machinery/computer/dna_console/proc/appearance_block(datum/preference/preference)
+	var/static/list/identity_blocks = list(
+		/datum/preference/choiced/gender = /datum/dna_block/identity/gender,
+		/datum/preference/choiced/hairstyle = /datum/dna_block/identity/hair_style,
+		/datum/preference/color/hair_color = /datum/dna_block/identity/hair_color,
+		/datum/preference/choiced/facial_hairstyle = /datum/dna_block/identity/facial_style,
+		/datum/preference/color/facial_hair_color = /datum/dna_block/identity/facial_color,
+		/datum/preference/color/eye_color = /datum/dna_block/identity/eye_colors,
+		/datum/preference/color/heterochromatic = /datum/dna_block/identity/eye_colors,
+		/datum/preference/choiced/skin_tone = /datum/dna_block/identity/skin_tone,
+		/datum/preference/choiced/mob_height = /datum/dna_block/identity/height,
+		/datum/preference/choiced/hair_gradient = /datum/dna_block/identity/hair_gradient,
+		/datum/preference/color/hair_gradient = /datum/dna_block/identity/hair_gradient_color,
+		/datum/preference/choiced/facial_hair_gradient = /datum/dna_block/identity/facial_gradient,
+		/datum/preference/color/facial_hair_gradient = /datum/dna_block/identity/facial_gradient_color,
+	)
+	if(identity_blocks[preference.type])
+		return GLOB.dna_identity_blocks[identity_blocks[preference.type]]
+	var/feature_key = preference.savefile_key
+	if(istype(preference, /datum/preference/choiced/species_feature))
+		var/datum/preference/choiced/species_feature/feature = preference
+		feature_key = feature.feature_key
+	else if(preference.type == /datum/preference/color/mutant_color)
+		feature_key = FEATURE_MUTANT_COLOR
+	else if(preference.type == /datum/preference/choiced/ethereal_color)
+		feature_key = FEATURE_MUTANT_COLOR
+	else if(preference.type == /datum/preference/color/fish_tail_color)
+		feature_key = FEATURE_TAIL_FISH_COLOR
+	else if(preference.relevant_body_markings && istype(preference, /datum/preference/color))
+		feature_key = preference.relevant_body_markings::dna_color_feature_key
+	for(var/block_type in GLOB.dna_feature_blocks)
+		var/datum/dna_block/feature/block = GLOB.dna_feature_blocks[block_type]
+		if(block.feature_key == feature_key)
+			return block
+	return null
+
 
 /obj/machinery/computer/dna_console/ui_interact(mob/user, datum/tgui/ui)
 	. = ..()
@@ -312,10 +389,228 @@
 		ui = new(user, src, "DnaConsole")
 		ui.open()
 
+/// Include the existing appearance catalogs' spritesheet alongside genetics assets.
 /obj/machinery/computer/dna_console/ui_assets()
 	. = ..() || list()
 	. += get_asset_datum(/datum/asset/simple/genetics)
+	. += get_asset_datum(/datum/asset/spritesheet_batched/preferences)
 
+/// Read the current scanner occupant's appearance without consulting or writing player preferences.
+/obj/machinery/computer/dna_console/proc/get_scanner_appearance()
+	if(!can_modify_occupant() || !ishuman(scanner_occupant))
+		clear_appearance_target()
+		return null
+
+	if(!appearance_target || appearance_subject?.resolve() != scanner_occupant || appearance_target.dna.species.type != scanner_occupant.dna.species.type)
+		clear_appearance_target()
+		appearance_subject = WEAKREF(scanner_occupant)
+		appearance_target = new(null)
+		scanner_occupant.dna.copy_dna(appearance_target.dna, COPY_DNA_SPECIES)
+		var/mob/living/carbon/human/original = scanner_occupant
+		// These rendering constraints are not encoded by the editable DNA blocks.
+		appearance_target.physique = original.physique
+		for(var/trait in list(TRAIT_BALD, TRAIT_SHAVED))
+			if(HAS_TRAIT(original, trait))
+				ADD_TRAIT(appearance_target, trait, INNATE_TRAIT)
+		appearance_target.eye_color_heterochromatic = original.eye_color_heterochromatic
+		target_initial_identity = appearance_target.dna.unique_identity
+		target_initial_features = appearance_target.dna.unique_features
+		appearance_target.updateappearance(mutcolor_update = TRUE)
+	var/mob/living/carbon/human/subject = appearance_target
+	if(portrait_appearance != subject.appearance || portrait_height != subject.mob_height)
+		subject.apply_height(subject, ENTIRE_BODY)
+		portrait_appearance = subject.appearance
+		portrait_height = subject.mob_height
+		var/mutable_appearance/portrait = new(subject.appearance)
+		portrait.dir = appearance_direction
+		portrait.transform = null
+		portrait.pixel_x = 0
+		portrait.pixel_y = 0
+		appearance_portrait = icon2base64(render_appearance_portrait(portrait, subject))
+
+	var/list/appearance_data = list(
+		"subject_ref" = REF(scanner_occupant),
+		"target_ref" = REF(appearance_target),
+		"portrait" = appearance_portrait,
+		"icon_source" = "asset",
+		PREFERENCE_CATEGORY_FEATURES = list(),
+		PREFERENCE_CATEGORY_SECONDARY_FEATURES = list(),
+		PREFERENCE_CATEGORY_SUPPLEMENTAL_FEATURES = list(),
+	)
+	var/obj/item/bodypart/head/subject_head = subject.get_bodypart(BODY_ZONE_HEAD)
+	var/list/current_values = list(
+		/datum/preference/choiced/gender = (subject.dna.species.sexes && !HAS_TRAIT(scanner_occupant, TRAIT_AGENDER)) ? subject.gender : null,
+		/datum/preference/choiced/hairstyle = subject_head?.hairstyle,
+		/datum/preference/color/hair_color = subject_head?.hair_color,
+		/datum/preference/choiced/facial_hairstyle = subject_head?.facial_hairstyle,
+		/datum/preference/color/facial_hair_color = subject_head?.facial_hair_color,
+		/datum/preference/color/eye_color = subject.eye_color_left,
+		/datum/preference/color/heterochromatic = subject.eye_color_heterochromatic ? subject.eye_color_right : null,
+		/datum/preference/choiced/skin_tone = subject.skin_tone,
+		/datum/preference/choiced/body_type = subject.dna.species.sexes ? subject.physique : null,
+		/datum/preference/choiced/hair_gradient = subject_head?.get_hair_gradient_style(GRADIENT_HAIR_KEY),
+		/datum/preference/choiced/facial_hair_gradient = subject_head?.get_hair_gradient_style(GRADIENT_FACIAL_HAIR_KEY),
+		/datum/preference/color/mutant_color = (TRAIT_FIXED_MUTANT_COLORS in subject.dna.species.inherent_traits) ? null : subject.dna.features[FEATURE_MUTANT_COLOR],
+		/datum/preference/color/fish_tail_color = subject.dna.features[FEATURE_TAIL_FISH_COLOR],
+		/datum/preference/choiced/lizard_legs = subject.dna.features[FEATURE_LEGS],
+	)
+	if(current_values[/datum/preference/choiced/hair_gradient] != SPRITE_ACCESSORY_NONE)
+		current_values[/datum/preference/color/hair_gradient] = subject_head?.get_hair_gradient_color(GRADIENT_HAIR_KEY)
+	if(current_values[/datum/preference/choiced/facial_hair_gradient] != SPRITE_ACCESSORY_NONE)
+		current_values[/datum/preference/color/facial_hair_gradient] = subject_head?.get_hair_gradient_color(GRADIENT_FACIAL_HAIR_KEY)
+	var/datum/preference/choiced/mob_height/height_preference = GLOB.preference_entries[/datum/preference/choiced/mob_height]
+	for(var/height_choice in height_preference.height_to_actual)
+		if(height_preference.height_to_actual[height_choice] == subject.mob_height)
+			current_values[/datum/preference/choiced/mob_height] = height_choice
+			break
+
+	for(var/preference_type in GLOB.preference_entries)
+		var/datum/preference/preference = GLOB.preference_entries[preference_type]
+		if(!(preference.category in appearance_data) && preference.type != /datum/preference/choiced/gender)
+			continue
+
+		var/value = current_values[preference_type]
+		if(preference.type == /datum/preference/choiced/ethereal_color)
+			value = subject.dna.features[FEATURE_MUTANT_COLOR]
+			for(var/color_name in GLOB.color_list_ethereal)
+				if(lowertext(GLOB.color_list_ethereal[color_name]) == lowertext(subject.dna.features[FEATURE_MUTANT_COLOR]))
+					value = color_name
+					break
+		else if(istype(preference, /datum/preference/choiced/species_feature))
+			var/datum/preference/choiced/species_feature/feature = preference
+			value = subject.dna.features[feature.feature_key]
+			if(isnull(value) && feature.relevant_body_markings)
+				value = subject.dna.species.body_markings[feature.relevant_body_markings]
+			if(isnull(value) && feature.relevant_organ)
+				value = subject.dna.species.mutant_organs[feature.relevant_organ]
+		else if(!(preference_type in current_values))
+			value = subject.dna.features[preference.savefile_key]
+			if(isnull(value) && istype(preference, /datum/preference/color) && preference.relevant_body_markings)
+				value = subject.dna.features[preference.relevant_body_markings::dna_color_feature_key]
+		current_values[preference_type] = value
+
+	target_values = current_values
+	if(isnull(target_initial_values))
+		target_initial_values = current_values.Copy()
+	var/datum/preferences/dna_appearance/snapshot = new(current_values, scanner_occupant)
+	// Catalogs are immutable and shared; only the subject's values are rebuilt on UI updates.
+	var/static/list/catalog_cache = list()
+	var/list/catalog = list()
+	for(var/preference_type in current_values)
+		var/datum/preference/preference = GLOB.preference_entries[preference_type]
+		var/value = current_values[preference_type]
+		if(isnull(value) || !appearance_block(preference) || !preference.is_accessible(snapshot))
+			continue
+
+		var/category = preference.type == /datum/preference/choiced/gender ? PREFERENCE_CATEGORY_SECONDARY_FEATURES : preference.category
+		appearance_data[category][preference.savefile_key] = preference.serialize(value)
+		if(isnull(catalog_cache[preference.savefile_key]))
+			var/list/entry = preference.compile_constant_data() || list()
+			entry["kind"] = istype(preference, /datum/preference/color) ? "color" : "choice"
+			if(preference.type == /datum/preference/choiced/gender)
+				entry["name"] = "Пол"
+				entry["choices"] = list(MALE, FEMALE)
+				entry["display_names"] = list(MALE = "Мужской", FEMALE = "Женский")
+			catalog_cache[preference.savefile_key] = entry
+		catalog[preference.savefile_key] = catalog_cache[preference.savefile_key]
+	qdel(snapshot)
+	appearance_data["catalog"] = catalog
+	return appearance_data
+
+/// Bake the dummy's height displacement maps, which getFlatIcon does not render, into its cached PNG.
+/obj/machinery/computer/dna_console/proc/render_appearance_portrait(mutable_appearance/portrait, mob/living/carbon/human/dummy/subject)
+	var/icon/flat = getFlatIcon(portrait, no_anim = TRUE)
+	if(subject.mob_height == HUMAN_HEIGHT_MEDIUM)
+		return flat
+	for(var/list/height_filter as anything in subject.filter_data)
+		if(height_filter["type"] != "displace" || !height_filter["icon"])
+			continue
+		var/icon/mask = height_filter["icon"]
+		var/icon/displaced = icon('icons/blanks/32x32.dmi', "nothing")
+		displaced.Crop(1, 1, flat.Width(), flat.Height())
+		var/mask_x_offset = round((flat.Width() - mask.Width()) / 2)
+		var/mask_y_offset = round((flat.Height() - mask.Height()) / 2)
+		for(var/x in 1 to flat.Width())
+			for(var/y in 1 to flat.Height())
+				var/source_x = x
+				var/source_y = y
+				var/mask_x = x - mask_x_offset
+				var/mask_y = y - mask_y_offset
+				var/mask_color
+				if(mask_x >= 1 && mask_x <= mask.Width() && mask_y >= 1 && mask_y <= mask.Height())
+					mask_color = mask.GetPixel(mask_x, mask_y)
+				if(mask_color)
+					var/list/channels = rgb2num(mask_color, COLORSPACE_RGB)
+					if(length(channels) < 4 || channels[4])
+						// Height masks contain neutral or fully displaced pixels, without interpolated offsets.
+						source_x -= clamp(channels[1] - 128, -1, 1) * height_filter["size"]
+						source_y -= clamp(channels[2] - 128, -1, 1) * height_filter["size"]
+				if(source_x >= 1 && source_x <= flat.Width() && source_y >= 1 && source_y <= flat.Height())
+					var/pixel = flat.GetPixel(source_x, source_y)
+					if(pixel)
+						displaced.DrawBox(pixel, x, y, x, y)
+		flat = displaced
+	return flat
+
+/// Validate editor input against the current draft, then modify only its encoded DNA block.
+/obj/machinery/computer/dna_console/proc/set_target_appearance(list/params)
+	if(genetic_damage_pulse_index)
+		return FALSE
+	var/list/appearance_data = get_scanner_appearance()
+	if(!appearance_data || params["subject_ref"] != REF(scanner_occupant) || params["target_ref"] != REF(appearance_target))
+		return FALSE
+	if(!istext(params["preference"]) || !istext(params["value"]))
+		return FALSE
+	var/datum/preference/preference = GLOB.preference_entries_by_key[params["preference"]]
+	if(!preference || !(preference.savefile_key in appearance_data["catalog"]))
+		return FALSE
+	if(preference.type == /datum/preference/choiced/gender && !(params["value"] in list(MALE, FEMALE)))
+		return FALSE
+	var/datum/preferences/dna_appearance/snapshot = new(target_values, scanner_occupant)
+	if(!preference.is_accessible(snapshot) || !preference.is_valid(params["value"], snapshot))
+		qdel(snapshot)
+		return FALSE
+	var/value = preference.deserialize(params["value"], snapshot)
+	if(preference.serialize(value) == preference.serialize(target_values[preference.type]))
+		qdel(snapshot)
+		return TRUE
+	if(preference.type == /datum/preference/color/heterochromatic)
+		appearance_target.set_eye_color(appearance_target.eye_color_left, value)
+	else
+		preference.apply_to_human(appearance_target, value, snapshot)
+	qdel(snapshot)
+	var/datum/dna_block/block = appearance_block(preference)
+	var/is_identity = istype(block, /datum/dna_block/identity)
+	var/old_hash = is_identity ? appearance_target.dna.unique_identity : appearance_target.dna.unique_features
+	var/new_block = block.unique_block(appearance_target)
+	var/restore_initial = (value == target_initial_values[preference.type])
+	if(block.type == /datum/dna_block/identity/eye_colors)
+		restore_initial = appearance_target.eye_color_left == target_initial_values[/datum/preference/color/eye_color] && appearance_target.eye_color_right == (target_initial_values[/datum/preference/color/heterochromatic] || target_initial_values[/datum/preference/color/eye_color])
+	if(restore_initial)
+		new_block = block.get_block(is_identity ? target_initial_identity : target_initial_features)
+	if(is_identity)
+		appearance_target.dna.unique_identity = block.modified_hash(old_hash, new_block)
+	else
+		appearance_target.dna.unique_features = block.modified_hash(old_hash, new_block)
+	appearance_target.updateappearance(mutcolor_update = TRUE)
+	return TRUE
+
+/// Read-only adapter for character creation's accessibility rules, using the scanned body's values.
+/datum/preferences/dna_appearance
+	load_and_save = FALSE
+
+/// Deliberately skip the client/savefile constructor: no player preferences are loaded or changed.
+/datum/preferences/dna_appearance/New(list/values, mob/living/carbon/human/subject)
+	value_cache = values.Copy()
+	value_cache[/datum/preference/choiced/species] = subject.dna.species.type
+	for(var/datum/quirk/quirk as anything in subject.quirks)
+		all_quirks += quirk.name
+
+/// Missing body values stay missing instead of loading or generating saved defaults.
+/datum/preferences/dna_appearance/read_preference(preference_type)
+	return value_cache[preference_type]
+
+/// Describe the current scanner occupant, genetic buffers and appearance to TGUI.
 /obj/machinery/computer/dna_console/ui_data(mob/user)
 	var/list/data = list()
 
@@ -343,6 +638,9 @@
 				data["stdDevAcc"] = "<38 %"
 
 	data["isViableSubject"] = is_viable_occupant
+	data["appearance"] = get_scanner_appearance()
+	data["targetUNI"] = appearance_target?.dna.unique_identity
+	data["targetUF"] = appearance_target?.dna.unique_features
 	if(is_viable_occupant)
 		data["subjectName"] = scanner_occupant.name
 		if(scanner_occupant.transformation_timer)
@@ -432,6 +730,40 @@
 	add_fingerprint(usr)
 
 	switch(action)
+		if("rotate_appearance_target")
+			var/list/appearance_data = get_scanner_appearance()
+			if(!appearance_data || params["subject_ref"] != REF(scanner_occupant) || params["target_ref"] != REF(appearance_target))
+				return FALSE
+			appearance_direction = turn(appearance_direction, -90)
+			portrait_appearance = null
+			return TRUE
+		if("makeup_pulse_differences")
+			if(genetic_damage_pulse_index)
+				return FALSE
+			var/list/appearance_data = get_scanner_appearance()
+			if(!appearance_data || params["subject_ref"] != REF(scanner_occupant) || params["target_ref"] != REF(appearance_target))
+				return FALSE
+			var/list/positions = list()
+			for(var/type in list(GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY, GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES))
+				var/source = type == GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY ? scanner_occupant.dna.unique_identity : scanner_occupant.dna.unique_features
+				var/target = type == GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY ? appearance_target.dna.unique_identity : appearance_target.dna.unique_features
+				if(!length(source) || length(source) != length(target))
+					return FALSE
+				for(var/index in 1 to length(source))
+					if(copytext(source, index, index + 1) != copytext(target, index, index + 1))
+						positions += list(list("type" = type, "index" = index))
+			if(!length(positions))
+				return FALSE
+			genetic_damage_pulse_queue = positions
+			genetic_damage_pulse_subject = WEAKREF(scanner_occupant)
+			genetic_damage_pulse_type = positions[1]["type"]
+			genetic_damage_pulse_index = positions[1]["index"]
+			genetic_damage_pulse_timer = world.time + pulse_duration SECONDS
+			connected_scanner.use_energy(connected_scanner.active_power_usage * length(positions))
+			begin_processing()
+			return TRUE
+		if("set_target_appearance")
+			return set_target_appearance(params)
 		// Connect this DNA Console to a nearby DNA Scanner
 		// Usually only activate as an option if there is no connected scanner
 		if("connect_scanner")
@@ -1182,6 +1514,8 @@
 		// params["val"] - New strength value as text string, converted to number
 		//  later on in code
 		if("set_pulse_strength")
+			if(genetic_damage_pulse_index)
+				return FALSE
 			var/value = round(text2num(params["val"]))
 			pulse_strength = WRAP(value, 1, GENETIC_DAMAGE_STRENGTH_MAX+1)
 			return
@@ -1191,6 +1525,8 @@
 		// params["val"] - New strength value as text string, converted to number
 		//  later on in code
 		if("set_pulse_duration")
+			if(genetic_damage_pulse_index)
+				return FALSE
 			var/value = round(text2num(params["val"]))
 			pulse_duration = WRAP(value, 1, GENETIC_DAMAGE_DURATION_MAX+1)
 			return
@@ -1429,12 +1765,15 @@
 		if("makeup_pulse")
 			// GUARD CHECK - Can we genetically modify the occupant? Includes scanner
 			//  operational guard checks.
-			if(!can_modify_occupant())
+			if(genetic_damage_pulse_index || !can_modify_occupant())
 				return
 
 			// Set the appropriate timer, string, and index to pulse. This is then managed
 			//  later on in process()
 			var/type = params["type"]
+			if(type != GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY && type != GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES)
+				return FALSE
+			genetic_damage_pulse_subject = WEAKREF(scanner_occupant)
 			genetic_damage_pulse_type = type
 			var/len
 			switch(type)
@@ -1906,11 +2245,10 @@
 	* scanner occupant var.
  */
 /obj/machinery/computer/dna_console/proc/on_scanner_open()
+	clear_appearance_target()
 	// If we had a genetic damage pulse action ongoing, we want to stop this.
 	// Imagine it being like a microwave stopping when you open the door.
-	genetic_damage_pulse_index = 0
-	genetic_damage_pulse_timer = 0
-	end_processing()
+	cancel_genetic_damage_pulse()
 	scanner_occupant = null
 
 /**
@@ -2296,22 +2634,39 @@
 	// GUARD CHECK - Can we genetically modify the occupant? Includes scanner
 	//  operational guard checks.
 	// If we can't, abort the procedure.
-	if(!can_modify_occupant() || (genetic_damage_pulse_type != GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY && genetic_damage_pulse_type != GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES))
-		genetic_damage_pulse_index = 0
-		end_processing()
+	if(!can_modify_occupant() || genetic_damage_pulse_subject?.resolve() != scanner_occupant || (genetic_damage_pulse_type != GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY && genetic_damage_pulse_type != GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES))
+		cancel_genetic_damage_pulse()
 		return
+	if(genetic_damage_pulse_queue)
+		for(var/list/position as anything in genetic_damage_pulse_queue)
+			pulse_genetic_position(position["type"], position["index"])
+	else
+		pulse_genetic_position(genetic_damage_pulse_type, genetic_damage_pulse_index)
+	scanner_occupant.updateappearance(mutcolor_update = TRUE, mutations_overlay_update = TRUE)
+	cancel_genetic_damage_pulse()
 
+/// Release all delayed pulse state, including a batch, without applying it.
+/obj/machinery/computer/dna_console/proc/cancel_genetic_damage_pulse()
+	genetic_damage_pulse_index = 0
+	genetic_damage_pulse_timer = 0
+	genetic_damage_pulse_type = null
+	genetic_damage_pulse_queue = null
+	genetic_damage_pulse_subject = null
+	end_processing()
+
+/// Apply the same random impulse used by an individual DNA button to one position.
+/obj/machinery/computer/dna_console/proc/pulse_genetic_position(type, index)
 	var/len
-	switch(genetic_damage_pulse_type)
+	switch(type)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY)
 			len = length(scanner_occupant.dna.unique_identity)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES)
 			len = length(scanner_occupant.dna.unique_features)
 
-	var/num = randomize_GENETIC_DAMAGE_accuracy(genetic_damage_pulse_index, pulse_duration + (connected_scanner.precision_coeff ** 2), len) //Each manipulator level above 1 makes randomization as accurate as selected time + manipulator lvl^2  //Value is this high for the same reason as with laser - not worth the hassle of upgrading if the bonus is low
+	var/num = randomize_GENETIC_DAMAGE_accuracy(index, pulse_duration + (connected_scanner.precision_coeff ** 2), len)
 
 	var/hex
-	switch(genetic_damage_pulse_type)
+	switch(type)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY)
 			hex = copytext(scanner_occupant.dna.unique_identity, num, num+1)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES)
@@ -2319,17 +2674,11 @@
 
 	hex = scramble(hex, pulse_strength, pulse_duration)
 
-	switch(genetic_damage_pulse_type)
+	switch(type)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_IDENTITY)
 			scanner_occupant.dna.unique_identity = copytext(scanner_occupant.dna.unique_identity, 1, num) + hex + copytext(scanner_occupant.dna.unique_identity, num + 1)
 		if(GENETIC_DAMAGE_PULSE_UNIQUE_FEATURES)
 			scanner_occupant.dna.unique_features = copytext(scanner_occupant.dna.unique_features, 1, num) + hex + copytext(scanner_occupant.dna.unique_features, num + 1)
-	scanner_occupant.updateappearance(mutcolor_update=1, mutations_overlay_update=1)
-
-	genetic_damage_pulse_index = 0
-	genetic_damage_pulse_type = null
-	end_processing()
-	return
 
 /**
  * Sets the default state for the tgui interface.
@@ -2365,6 +2714,8 @@
 	diskette = null
 
 /obj/machinery/computer/dna_console/proc/set_connected_scanner(new_scanner)
+	cancel_genetic_damage_pulse()
+	clear_appearance_target()
 	if(connected_scanner)
 		UnregisterSignal(connected_scanner, COMSIG_QDELETING)
 		if(connected_scanner.linked_console == src)

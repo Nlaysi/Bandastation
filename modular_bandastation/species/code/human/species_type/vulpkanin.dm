@@ -55,6 +55,7 @@
 
 /datum/species/vulpkanin/randomize_features()
 	var/list/features = ..()
+	features[FEATURE_VULPKANIN_LIMB_MARKINGS] = SPRITE_ACCESSORY_NONE
 	features[FEATURE_VULPKANIN_CHEST_MARKINGS] = prob(50) ? pick(SSaccessories.feature_list[FEATURE_VULPKANIN_CHEST_MARKINGS]) : SPRITE_ACCESSORY_NONE
 	features[FEATURE_VULPKANIN_TAIL_MARKINGS] = prob(50) ? pick(SSaccessories.feature_list[FEATURE_VULPKANIN_TAIL_MARKINGS]) : SPRITE_ACCESSORY_NONE
 	features[FEATURE_VULPKANIN_HEAD_MARKINGS] = prob(50) ? pick(SSaccessories.feature_list[FEATURE_VULPKANIN_HEAD_MARKINGS]) : SPRITE_ACCESSORY_NONE
