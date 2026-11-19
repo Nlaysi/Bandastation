@@ -40,6 +40,23 @@ type Appearance = {
   catalog: Record<string, AppearanceCatalog>;
 };
 
+const appearanceNames: Record<string, string> = {
+  hairstyle_name: 'Причёска',
+  facial_style_name: 'Растительность на лице',
+  eye_color: 'Цвет глаз',
+  heterochromatic: 'Цвет правого глаза',
+  hair_color: 'Цвет волос',
+  facial_hair_color: 'Цвет растительности на лице',
+  hair_gradient: 'Градиент волос',
+  hair_gradient_color: 'Цвет градиента волос',
+  facial_hair_gradient: 'Градиент растительности на лице',
+  facial_hair_gradient_color: 'Цвет градиента растительности на лице',
+  feature_mcolor: 'Основной цвет',
+  feature_ethcolor: 'Цвет тела',
+  feature_fish_tail_color: 'Цвет рыбьего хвоста',
+  feature_lizard_frills: 'Шейный воротник',
+};
+
 function AppearanceColorInput(props: {
   value: string;
   onChange: (value: string) => void;
@@ -144,7 +161,10 @@ function AppearanceEditor({ appearance }: { appearance: Appearance }) {
       ? catalog.supplemental_feature
       : undefined;
   const featureName = (id: string) =>
-    appearance.catalog[id].name || features[id]?.name || id;
+    appearanceNames[id] ||
+    features[id]?.name ||
+    appearance.catalog[id].name ||
+    id;
   const getImage = (image?: string) =>
     !image
       ? {}
@@ -175,7 +195,7 @@ function AppearanceEditor({ appearance }: { appearance: Appearance }) {
           </Section>
         </Stack.Item>
         <Stack.Item grow>
-          <Section fill scrollable title="Дополнительные особенности">
+          <Section fill scrollable title="Дополнительные признаки">
             <Stack vertical>
               {Object.entries(appearance.secondary_features).map(([id]) => (
                 <Stack.Item key={id} className="PreferencesMenu__AltName">
@@ -263,7 +283,7 @@ export function DnaConsoleAppearance() {
             left="0.5rem"
             top="0.35rem"
             icon="rotate-right"
-            tooltip="Повернуть куклу"
+            tooltip="Повернуть предпросмотр"
             disabled={!data.appearance}
             onClick={() =>
               act('rotate_appearance_target', {
