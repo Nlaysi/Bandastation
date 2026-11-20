@@ -62,7 +62,10 @@ const ChromosomeInfo = (props) => {
         <Box color="label" mt={1}>
           Совместимые хромосомы:{' '}
           {mutation.ValidChromos.split(', ')
-            .map((name) => data.chromosomeCatalog?.[name]?.name || name)
+            .map((name) => {
+              const catalogKey = `${name.toLowerCase()} chromosome`;
+              return data.chromosomeCatalog?.[catalogKey]?.name || name;
+            })
             .join(', ')}
         </Box>
       </>

@@ -256,7 +256,7 @@ export const DnaConsoleSequencer = (props) => {
       )) ||
         (isMonkey && mutation?.Name !== 'Monkified' && (
           <Section color="bad">
-            Последовательность повреждена: подопытный — обезьяна.
+            Редактирование этих генов недоступно в низшей форме.
           </Section>
         )) ||
         (subjectStatus === SUBJECT_TRANSFORMING && (

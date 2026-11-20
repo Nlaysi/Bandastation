@@ -207,6 +207,7 @@
 #include "detomatix.dm"
 #include "dismemberment.dm"
 #include "dna_console_appearance.dm"
+#include "../../../modular_bandastation/species/code/tests/wolpin_tests.dm"
 #include "dna_infusion.dm"
 #include "door_access.dm"
 #include "door_control_assembly.dm"
