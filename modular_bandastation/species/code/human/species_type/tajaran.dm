@@ -1,4 +1,5 @@
 /datum/species/tajaran
+	primitive_form = /datum/species/monkey/farwa
 	name = "\improper Таяран"
 	plural_form = "Таяры"
 	id = SPECIES_TAJARAN

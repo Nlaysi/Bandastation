@@ -2,6 +2,7 @@
 	name = "\improper Вульпканин"
 	plural_form = "Вульпкане"
 	id = SPECIES_VULPKANIN
+	primitive_form = /datum/species/monkey/wolpin
 	inherent_traits = list(
 		TRAIT_MUTANT_COLORS
 	)

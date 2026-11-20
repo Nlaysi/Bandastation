@@ -2,6 +2,7 @@
 	name = "Вокс"
 	plural_form = "Воксы"
 	id = SPECIES_VOX
+	primitive_form = /datum/species/monkey/sparra
 	inherent_traits = list(
 		TRAIT_MUTANT_COLORS,
 		TRAIT_NODECAY,
