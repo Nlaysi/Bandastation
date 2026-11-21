@@ -93,6 +93,8 @@
 
 /obj/effect/temp_visual/lesser_form_scan/Initialize(mapload, mob/living/carbon/human/source, target_species)
 	. = ..()
+	if(QDELETED(source) || !source.dna || !target_species)
+		return INITIALIZE_HINT_QDEL
 	appearance = source.appearance
 	setDir(source.dir)
 	appearance_flags |= KEEP_TOGETHER | KEEP_APART

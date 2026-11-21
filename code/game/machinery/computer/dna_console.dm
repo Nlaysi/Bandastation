@@ -475,7 +475,7 @@
 		if(preference.type == /datum/preference/choiced/ethereal_color)
 			value = subject.dna.features[FEATURE_MUTANT_COLOR]
 			for(var/color_name in GLOB.color_list_ethereal)
-				if(lowertext(GLOB.color_list_ethereal[color_name]) == lowertext(subject.dna.features[FEATURE_MUTANT_COLOR]))
+				if(LOWER_TEXT(GLOB.color_list_ethereal[color_name]) == LOWER_TEXT(value))
 					value = color_name
 					break
 		else if(istype(preference, /datum/preference/choiced/species_feature))

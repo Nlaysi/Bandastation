@@ -307,7 +307,10 @@
 		TEST_ASSERT(marking.can_draw_on_bodypart(limb, subject), "The actual [zone] must allow its markings to be drawn.")
 		TEST_ASSERT(findtext(limb.get_cache_key(), "sharppoints"), "The rendered [zone] cache must include the new marking.")
 	TEST_ASSERT(icon2base64(getFlatIcon(subject, no_anim = TRUE, defdir = SOUTH)) != source_before, "Actual body rendering must change after the matching DNA is applied.")
-	var/mob/living/carbon/human/fresh = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/fresh = allocate(/mob/living/carbon/human/consistent)
+	fresh.dna.features -= FEATURE_VULPKANIN_LIMB_MARKINGS
+	fresh.dna.initialize_dna(newblood_type = null, create_mutation_blocks = FALSE)
+	TEST_ASSERT_EQUAL(fresh.dna.features[FEATURE_VULPKANIN_LIMB_MARKINGS], SPRITE_ACCESSORY_NONE, "Generating features must set a default when the marking is missing.")
 	fresh.set_species(/datum/species/vulpkanin)
 	fresh.updateappearance(mutcolor_update = TRUE)
 	TEST_ASSERT_EQUAL(fresh.dna.features[FEATURE_VULPKANIN_LIMB_MARKINGS], SPRITE_ACCESSORY_NONE, "A fresh generated genome must encode the default instead of random limb markings.")

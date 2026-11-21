@@ -110,6 +110,7 @@
 	desc = "Пять обезвоженных экземпляров. Просто добавьте воды!"
 	icon = 'icons/bandastation/mob/species/lesser_forms/boxes.dmi'
 	icon_state = "stok_box"
+	illustration = null
 	cube_type = /obj/item/food/monkeycube/stok
 
 /obj/item/organ/tail/monkey/stok
@@ -198,6 +199,7 @@
 	desc = "Пять обезвоженных экземпляров. Просто добавьте воды!"
 	icon = 'icons/bandastation/mob/species/lesser_forms/boxes.dmi'
 	icon_state = "neaera_box"
+	illustration = null
 	cube_type = /obj/item/food/monkeycube/neara
 
 /obj/item/bodypart/head/monkey/neara
@@ -271,6 +273,7 @@
 	desc = "Пять обезвоженных экземпляров. Просто добавьте воды!"
 	icon = 'icons/bandastation/mob/species/lesser_forms/boxes.dmi'
 	icon_state = "nian_worme_box"
+	illustration = null
 	cube_type = /obj/item/food/monkeycube/worme
 
 /obj/item/bodypart/head/monkey/worme
@@ -355,6 +358,7 @@
 	desc = "Пять обезвоженных экземпляров. Просто добавьте воды!"
 	icon = 'icons/bandastation/mob/species/lesser_forms/boxes.dmi'
 	icon_state = "farwa_box"
+	illustration = null
 	cube_type = /obj/item/food/monkeycube/farwa
 
 /obj/item/organ/tail/monkey/farwa
@@ -450,6 +454,7 @@
 	desc = "Пять обезвоженных экземпляров. Просто добавьте воды!"
 	icon = 'icons/bandastation/mob/species/lesser_forms/boxes.dmi'
 	icon_state = "sparra_box"
+	illustration = null
 	cube_type = /obj/item/food/monkeycube/sparra
 
 /obj/item/bodypart/head/monkey/sparra

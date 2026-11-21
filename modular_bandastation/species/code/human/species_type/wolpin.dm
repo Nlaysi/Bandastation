@@ -118,6 +118,7 @@
 /datum/language/monkey/wolpin
 	name = "Волпинский"
 	desc = "Гортанные звуки, рычание и лай, отдалённо напоминающие канилунц."
+	key = "r"
 	syllables = list("гав", "вуф", "рр", "ау", "вух")
 
 /datum/language/monkey/wolpin/get_random_name(gender = NEUTER, name_count = 2, syllable_min = 2, syllable_max = 4, force_use_syllables = FALSE)
