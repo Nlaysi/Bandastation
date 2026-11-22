@@ -5,6 +5,7 @@
 #include "code/clothing/items.dm"
 #include "code/clothing/resomi_generated.dm"
 #include "code/clothing/lesser_form_uniform.dm"
+#include "code/food/kentucky_fried_vox.dm"
 
 #include "code/human/species/skills.dm"
 #include "code/human/species_type/moth.dm"

@@ -423,6 +423,7 @@
 	changesource_flags = MIRROR_BADMIN
 	adult_form = /datum/species/vox
 	recycled_cube_type = /obj/item/food/monkeycube/sparra
+	knife_butcher_results = list(/obj/item/food/meat/slab/monkey = 4, /obj/item/food/meat/slab/monkey/sparra = 1, /obj/item/stack/sheet/animalhide/carbon/monkey = 1)
 	mutantlungs = /obj/item/organ/lungs/vox
 	mutanttongue = /obj/item/organ/tongue/monkey/lesser_form/sparra
 	mutant_organs = null
@@ -474,6 +475,7 @@
 	icon_static = 'icons/bandastation/mob/species/lesser_forms/vox_sparra.dmi'
 	icon_state = "sparra_chest"
 	limb_id = "sparra"
+	butcher_drops_override = list(/obj/item/food/meat/slab/monkey = 1, /obj/item/food/meat/slab/monkey/sparra = 1)
 
 /obj/item/bodypart/arm/left/monkey/sparra
 	icon = 'icons/bandastation/mob/species/lesser_forms/vox_sparra.dmi'

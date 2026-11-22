@@ -217,9 +217,14 @@ GLOBAL_LIST_INIT(oilfry_blacklisted_items, typecacheof(list(
 /obj/machinery/deepfryer/attack_hand(mob/living/user, list/modifiers)
 	if(frying)
 		to_chat(user, span_notice("Вы вытаскиваете [frying.declent_ru(ACCUSATIVE)] из [declent_ru(GENITIVE)]."))
+		var/obj/item/food/breaded_vox/batch = frying
+		var/perfectly_fried = cook_time >= FRYING_TIME_PERFECT && cook_time < FRYING_TIME_BURNT
 		frying.forceMove(drop_location())
+		var/obj/item/removed_item = frying
+		if(perfectly_fried && istype(batch) && !QDELETED(batch))
+			removed_item = batch.pack_servings()
 		if(Adjacent(user) && !issilicon(user))
-			user.put_in_hands(frying)
+			user.put_in_hands(removed_item)
 		return
 
 	else if(user.pulling && iscarbon(user.pulling) && reagents.total_volume)
