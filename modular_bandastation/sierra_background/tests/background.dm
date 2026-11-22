@@ -118,7 +118,7 @@
 
 /datum/unit_test/donor_job_assigned_profile/Run()
 	var/datum/preferences/preferences = make_preferences()
-	var/datum/job/donor/waiter/job = allocate(/datum/job/donor/waiter)
+	var/datum/job/donor/barber/job = allocate(/datum/job/donor/barber)
 	var/datum/preference/age = GLOB.preference_entries[/datum/preference/numeric/age]
 	var/datum/preference/title = GLOB.preference_entries[/datum/preference/donor_job_titles]
 	var/datum/preference/use_current_slot = GLOB.preference_entries[/datum/preference/toggle/late_join_always_current_slot]
@@ -128,7 +128,7 @@
 	preferences.save_character()
 	preferences.switch_to_slot(assigned_slot)
 	preferences.write_preference(age, 23)
-	preferences.write_preference(title, list(job.title = "Хост сервиса"))
+	preferences.write_preference(title, list(job.title = "Стилист"))
 	preferences.save_character()
 	preferences.switch_to_slot(first_slot)
 	preferences.job_assigned_profiles = list(job.title = assigned_slot)
@@ -139,7 +139,7 @@
 	TEST_ASSERT_EQUAL(preferences.default_slot, first_slot, "Checking a job changed the selected profile.")
 	TEST_ASSERT_EQUAL(selection.slot, assigned_slot, "Latejoin ignored the job's assigned profile.")
 	TEST_ASSERT_EQUAL(selection.get_eligibility(job), JOB_UNAVAILABLE_AGE, "The active profile's age bypassed the assigned profile's restriction.")
-	TEST_ASSERT_EQUAL(preferences.get_donor_job_title(job, selection.slot), "Хост сервиса", "The role variant was read from the wrong slot.")
+	TEST_ASSERT_EQUAL(preferences.get_donor_job_title(job, selection.slot), "Стилист", "The role variant was read from the wrong slot.")
 	qdel(selection)
 
 	preferences.write_preference(use_current_slot, TRUE)

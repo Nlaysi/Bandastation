@@ -131,7 +131,7 @@
 /datum/job/donor/representative_tsf
 	parent_type = /datum/job/donor/representative
 	title = "Representative TSF"
-	alternate_titles = list("Представитель ТСФ", "Дипломат ТСФ", "Публицист ТСФ")
+	alternate_titles = list("Представитель ТСФ", "Дипломат ТСФ")
 	description = "Представляйте интересы ТСФ в переговорах с командованием станции и оформляйте достигнутые договорённости."
 	config_tag = "REPRESENTATIVE_TSF"
 	display_order = JOB_DISPLAY_ORDER_DONOR_REPRESENTATIVE_TSF
