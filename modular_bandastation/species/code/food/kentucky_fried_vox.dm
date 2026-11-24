@@ -41,7 +41,7 @@
 	name = "breaded vox"
 	desc = "Raw Vox coated in flour and starch. Take it out of a deep fryer after it dings."
 	icon = 'icons/bandastation/obj/food/kentucky_fried_vox.dmi'
-	icon_state = "breaded"
+	icon_state = "breaded_batch"
 	foodtypes = MEAT | GRAIN | RAW | GORE
 	tastes = list("vox meat" = 2, "breading" = 1)
 	/// The bucket determines the yield for the meat used.

@@ -2,6 +2,7 @@
 	name = "Вокс"
 	plural_form = "Воксы"
 	id = SPECIES_VOX
+	meat = /obj/item/food/meat/slab/human/mutant/vox
 	primitive_form = /datum/species/monkey/sparra
 	inherent_traits = list(
 		TRAIT_MUTANT_COLORS,

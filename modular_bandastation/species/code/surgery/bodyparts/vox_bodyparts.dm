@@ -8,7 +8,6 @@
 	icon_greyscale = 'icons/bandastation/mob/species/vox/bodyparts.dmi'
 	limb_id = SPECIES_VOX
 	is_dimorphic = FALSE
-	butcher_drops_override = list(/obj/item/food/meat/slab/human = 1, /obj/item/food/meat/slab/human/mutant/vox = 1)
 
 /obj/item/bodypart/chest/vox/get_butt_sprite()
 	return icon('icons/mob/butts.dmi', BUTT_SPRITE_VOX)
