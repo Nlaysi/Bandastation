@@ -192,6 +192,7 @@ export type PreferencesMenuData = {
   job_bans?: string[];
   locked_donor_jobs?: Record<string, number>;
   donor_job_titles?: Record<string, string>;
+  alt_job_titles: Record<string, string>;
   job_days_left?: Record<string, number>;
   job_required_experience?: Record<
     string,
@@ -201,7 +202,11 @@ export type PreferencesMenuData = {
     }
   >;
   job_preferences: JobPreference[];
-  alt_job_titles: Record<string, string>;
+  away_missions?: {
+    name: string;
+    color: string;
+    roles: { title: string; description: string; slots: number }[];
+  }[];
 
   keybindings: Record<string, string[]>;
   overflow_role: string;

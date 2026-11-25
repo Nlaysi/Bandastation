@@ -127,7 +127,7 @@
 
 /datum/job/donor/guard
 	title = "Guard"
-	alternate_titles = list("Охранник сервиса")
+	alternate_titles = list("Охранник сервиса", "Вышибала")
 	description = "Следите за порядком в баре и на кухне. Удаляйте нарушителей из заведения и вызывайте службу безопасности, если нужна её помощь."
 	config_tag = "SERVICE_GUARD"
 	display_order = JOB_DISPLAY_ORDER_DONOR_GUARD
