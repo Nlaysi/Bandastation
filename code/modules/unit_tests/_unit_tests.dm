@@ -158,6 +158,7 @@
 #include "bitrunning.dm"
 #include "blindness.dm"
 #include "blood_volume_procs.dm"
+#include "blood_residue.dm"
 #include "bloody_footprints.dm"
 #include "borg_tools.dm"
 #include "bot_access.dm"
