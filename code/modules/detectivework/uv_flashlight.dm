@@ -97,3 +97,20 @@
 /obj/item/flashlight/forensic_uv/proc/illuminate(turf/source, list/intensities)
 	SIGNAL_HANDLER
 	intensities += lit_turfs[source]
+
+/// Strength of the brightest forensic lamp reaching this turf.
+/turf/proc/get_forensic_uv_intensity()
+	var/list/intensities = list(0)
+	SEND_SIGNAL(src, COMSIG_TURF_CHECK_UV, intensities)
+	return max(intensities)
+
+/// Visible light reduces fluorescence to one third of its dark-room contrast at full brightness.
+/turf/proc/get_forensic_uv_alpha(intensity)
+	var/ambient = 1
+	if(lighting_object)
+		ambient = get_static_lumcount()
+		var/list/lights = collect_dynamic_lightsources()
+		for(var/datum/component/overlay_lighting/light, contribution in lights)
+			if(!istype(light.parent, /obj/item/flashlight/forensic_uv))
+				ambient += contribution
+	return round(intensity * (1 - 2 / 3 * CLAMP01(ambient)))

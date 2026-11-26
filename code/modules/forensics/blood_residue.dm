@@ -124,10 +124,9 @@
 
 /datum/component/blood_residue/proc/refresh_exposure(datum/source, force = FALSE)
 	SIGNAL_HANDLER
-	var/list/intensities = list(0)
+	var/strongest = 0
 	if(treated && exposed_turf && length(samples))
-		SEND_SIGNAL(exposed_turf, COMSIG_TURF_CHECK_UV, intensities)
-	var/strongest = max(intensities)
+		strongest = exposed_turf.get_forensic_uv_intensity()
 	if(strongest && !uv_intensity)
 		START_PROCESSING(SSobj, src)
 	else if(!strongest && uv_intensity)
@@ -148,14 +147,7 @@
 /datum/component/blood_residue/proc/update_glow(force = FALSE)
 	var/new_alpha = 0
 	if(uv_intensity)
-		var/ambient = 1
-		if(exposed_turf.lighting_object)
-			ambient = exposed_turf.get_static_lumcount()
-			var/list/lights = exposed_turf.collect_dynamic_lightsources()
-			for(var/datum/component/overlay_lighting/light, contribution in lights)
-				if(!istype(light.parent, /obj/item/flashlight/forensic_uv))
-					ambient += contribution
-		new_alpha = round(uv_intensity * (1 - 2 / 3 * CLAMP01(ambient)))
+		new_alpha = exposed_turf.get_forensic_uv_alpha(uv_intensity)
 	var/obj/item/item = isitem(parent) ? parent : null
 	var/sprite_changed = item && (item.icon != mask_source_icon || item.icon_state != mask_source_state)
 	if(new_alpha == glow_alpha && !force && !sprite_changed)
